@@ -1,1 +1,393 @@
-blank
+%%% DOCUMENTCLASS 
+%%%-------------------------------------------------------------------------------
+
+\documentclass[
+a4paper, % Stock and paper size.
+11pt, % Type size.
+% article,
+% oneside, 
+onecolumn, % Only one column of text on a page.
+% openright, % Each chapter will start on a recto page.
+% openleft, % Each chapter will start on a verso page.
+openany, % A chapter may start on either a recto or verso page.
+]{memoir}
+
+%%% PACKAGES 
+%%%------------------------------------------------------------------------------
+
+\usepackage[utf8]{inputenc} % If utf8 encoding
+% \usepackage[lantin1]{inputenc} % If not utf8 encoding, then this is probably the way to go
+\usepackage[T1]{fontenc}    %
+\usepackage[english]{babel} % English please
+\usepackage[final]{microtype} % Less badboxes
+
+% \usepackage{kpfonts} %Font
+
+\usepackage{amsmath,amssymb,mathtools} % Math
+
+% \usepackage{tikz} % Figures
+\usepackage{graphicx} % Include figures
+
+\usepackage{braket} % Brackets
+
+\usepackage{listings} % Listings for code
+\usepackage[dvipsnames,svgnames]{xcolor} % Color for listing text
+
+%%% PAGE LAYOUT 
+%%%------------------------------------------------------------------------------
+
+\setlrmarginsandblock{0.15\paperwidth}{*}{1} % Left and right margin
+\setulmarginsandblock{0.2\paperwidth}{*}{1}  % Upper and lower margin
+\checkandfixthelayout
+
+%%% SECTIONAL DIVISIONS
+%%%------------------------------------------------------------------------------
+
+\maxsecnumdepth{subsection} % Subsections (and higher) are numbered
+\setsecnumdepth{subsection}
+
+\makeatletter %
+\makechapterstyle{standard}{
+  \setlength{\beforechapskip}{0\baselineskip}
+  \setlength{\midchapskip}{1\baselineskip}
+  \setlength{\afterchapskip}{8\baselineskip}
+  \renewcommand{\chapterheadstart}{\vspace*{\beforechapskip}}
+  \renewcommand{\chapnamefont}{\centering\normalfont\Large}
+  \renewcommand{\printchaptername}{\chapnamefont \@chapapp}
+  \renewcommand{\chapternamenum}{\space}
+  \renewcommand{\chapnumfont}{\normalfont\Large}
+  \renewcommand{\printchapternum}{\chapnumfont \thechapter}
+  \renewcommand{\afterchapternum}{\par\nobreak\vskip \midchapskip}
+  \renewcommand{\printchapternonum}{\vspace*{\midchapskip}\vspace*{5mm}}
+  \renewcommand{\chaptitlefont}{\centering\bfseries\LARGE}
+  \renewcommand{\printchaptertitle}[1]{\chaptitlefont ##1}
+  \renewcommand{\afterchaptertitle}{\par\nobreak\vskip \afterchapskip}
+}
+\makeatother
+
+\chapterstyle{standard}
+
+\setsecheadstyle{\normalfont\large\bfseries}
+\setsubsecheadstyle{\normalfont\normalsize\bfseries}
+\setparaheadstyle{\normalfont\normalsize\bfseries}
+\setparaindent{0pt}\setafterparaskip{0pt}
+
+%%% FLOATS AND CAPTIONS
+%%%------------------------------------------------------------------------------
+
+\makeatletter                  % You do not need to write [htpb] all the time
+\renewcommand\fps@figure{htbp} %
+\renewcommand\fps@table{htbp}  %
+\makeatother                   %
+
+\captiondelim{\space } % A space between caption name and text
+\captionnamefont{\small\bfseries} % Font of the caption name
+\captiontitlefont{\small\normalfont} % Font of the caption text
+
+\changecaptionwidth          % Change the width of the caption
+\captionwidth{1\textwidth} %
+
+%%% ABSTRACT
+%%%------------------------------------------------------------------------------
+
+\renewcommand{\abstractnamefont}{\normalfont\small\bfseries} % Font of abstract title
+\setlength{\absleftindent}{0.1\textwidth} % Width of abstract
+\setlength{\absrightindent}{\absleftindent}
+
+%%% HEADER AND FOOTER 
+%%%------------------------------------------------------------------------------
+
+\makepagestyle{standard} % Make standard pagestyle
+
+\makeatletter                 % Define standard pagestyle
+\makeevenfoot{standard}{}{}{} %
+\makeoddfoot{standard}{}{}{}  %
+\makeevenhead{standard}{\bfseries\thepage\normalfont\qquad\small\leftmark}{}{}
+\makeoddhead{standard}{}{}{\small\rightmark\qquad\bfseries\thepage}
+% \makeheadrule{standard}{\textwidth}{\normalrulethickness}
+\makeatother                  %
+
+\makeatletter
+\makepsmarks{standard}{
+\createmark{chapter}{both}{shownumber}{\@chapapp\ }{ \quad }
+\createmark{section}{right}{shownumber}{}{ \quad }
+\createplainmark{toc}{both}{\contentsname}
+\createplainmark{lof}{both}{\listfigurename}
+\createplainmark{lot}{both}{\listtablename}
+\createplainmark{bib}{both}{\bibname}
+\createplainmark{index}{both}{\indexname}
+\createplainmark{glossary}{both}{\glossaryname}
+}
+\makeatother                               %
+
+\makepagestyle{chap} % Make new chapter pagestyle
+
+\makeatletter
+\makeevenfoot{chap}{}{\small\bfseries\thepage}{} % Define new chapter pagestyle
+\makeoddfoot{chap}{}{\small\bfseries\thepage}{}  %
+\makeevenhead{chap}{}{}{}   %
+\makeoddhead{chap}{}{}{}    %
+% \makeheadrule{chap}{\textwidth}{\normalrulethickness}
+\makeatother
+
+\nouppercaseheads
+\pagestyle{standard}               % Choosing pagestyle and chapter pagestyle
+\aliaspagestyle{chapter}{chap} %
+
+%%% NEW COMMANDS
+%%%------------------------------------------------------------------------------
+
+\newcommand{\p}{\partial} %Partial
+% Or what ever you want
+
+%%% TABLE OF CONTENTS
+%%%------------------------------------------------------------------------------
+
+\maxtocdepth{subsection} % Only parts, chapters and sections in the table of contents
+\settocdepth{subsection}
+
+\AtEndDocument{\addtocontents{toc}{\par}} % Add a \par to the end of the TOC
+
+%%% INTERNAL HYPERLINKS
+%%%-------------------------------------------------------------------------------
+
+\usepackage{hyperref}   % Internal hyperlinks
+\hypersetup{
+pdfborder={0 0 0},      % No borders around internal hyperlinks
+pdfauthor={I am the Author} % author
+}
+\usepackage{memhfixc}   %
+\usepackage{textcomp}
+%%% THE DOCUMENT
+%%% Where all the important stuff is included!
+%%%-------------------------------------------------------------------------------
+
+\author{John Martin Jr.\\
+        \texttt{jdm2213@columbia.edu}}
+\title{\texttt{PDDLyte}\\ A Partial Implementation of The Planning Domain Definition Language}
+
+\begin{document}
+
+\frontmatter
+
+\maketitle
+
+% Listings -----------------------------------------------------------------------
+\lstset{
+  backgroundcolor=\color{Gainsboro},% choose the background color
+  basicstyle=\ttfamily,             % the size of the fonts that are used for the code
+  %breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  %breaklines=true,                 % sets automatic line breaking
+  %captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{blue},        % comment style
+  %deletekeywords={...},            % if you want to delete keywords from the given language
+  %escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  %extendedchars=true,              % lets you use non-ASCII characters; does not work with UTF-8
+  frame=single,                     % adds a frame around the code
+  %keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{orange},      % keyword style
+  %language=Octave,                 % the language of the code
+  %morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=none,                     % where to put the line-numbers; possible values are (none, left, right)
+  %numbersep=5pt,                   % how far the line-numbers are from the code
+  %numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},          % if not set, the frame-color may be changed on line-breaks within not-black text
+  showspaces=false,                 % show spaces everywhere adding particular underscores; overrides 'showstringspaces'
+  %showstringspaces=false,          % underline spaces within strings only
+  %showtabs=false,                  % show tabs within strings adding particular underscores
+  %stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  %stringstyle=\color{mymauve},     % string literal style
+  %tabsize=2,                       % sets default tabsize to 2 spaces
+  %title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+
+%\begin{abstract}
+%\lipsum[1-2]
+%\end{abstract}
+
+\clearpage
+\tableofcontents*
+\clearpage
+
+\chapter{Introduction}
+The PDDLyte language, whose name derives from the Planning Domain Definition Language (PDDL)\cite{pddl98}, is a specification language used to find solutions to planning problems. Similarly to PDDL, problems are specified with an initial state, a set of actions, and a set of goal states. From there, PPDLyte uses causal reasoning to deduce solutions, provided they exist, with a sequence of actions that map the initial state to the goal state(s). The PDDLyte language is limited in comparison to its predecessor, in that it only supports classical planning problems for a single agent: finite, observable, deterministic, fully-accessible  environment descriptions. Another distinguishing characteristic of PDDLyte is in the way it's compiled.\\
+
+Current PDDL implementations use a LISP interpreter to verify the solutions. This is where the life of PDDL ends. The PDDLyte implementation will take a .pdly file as input and will generate C code as an intermediate product; after which it is translated into X86 assembly code. With this design, the high-level reasoning of PDDLyte solutions can easily interface with systems-level C code. This language can be used to express high-level constraints on system. In essence, this will generate a library.\\
+
+Can I manage to provide graphical output?
+
+% Language Tutorial ------------------------------------------------------------
+\chapter{Language Tutorial}
+
+% Language Reference Manual-----------------------------------------------------
+\chapter{Language Reference Manual}
+The syntax of my language is chosen to be nearly identical to PDDL, sans all the parenthesis.
+
+\section{Datatypes}
+PDDLyte is a strongly-typed language. It inherits nearly all its syntax from PDDL -- sans the annoying parenthesis -- and only a subset of the datatypes. This is intended to provide the minimum set, required to solve classical-planning problems. The basic types in PDDLyte are boolean, integer, character, strings, and user-defined types.
+
+{\setlength{\parindent}{0cm}
+
+\textbf{Domains} --- Domains are the global problem descriptor. The requirements, predicates, actions, constants, etc. will be defined in this structure and used to. Only a single domain may be defined per file.
+
+\textbf{Problems} --- Problems include an initial state and one or more goal descriptions. All problems are associated with a domain, which provides the context for the solution to be in.
+
+\textbf{Initial State} --- define the predicates that are true in the system's starting configuration. This can be any valid state within the domain. Unless predicates are specified as true in this statement, they are set false.\\
+
+\textbf{Goal Description} --- The goal description defines the predicate(s) that are true in the system's final configuration(s)\\
+
+\textbf{Actions} --- Actions are the operators that transition the system between states. These are the basic elements which a solution is built\cite{strips70}. There are pre-conditions and effects associated with each action. The pre-conditions must be satisfied for the transition to take place. Furthermore, the effects must be valid according to an active problem description. If no pre-conditions are specified, then an action is always valid. The action definition must know the type of parameter its preconditions are composed of. \\
+
+\textbf{Predicates} --- Predicates consist of a list of declarations that define a property of an object. These can be either true or false. \\
+
+\textbf{Effects} --- Effects describe changes that occur when an action is completed. Predicate states are not affected in anyway by Effects. When an action is complete, the effect is simply set. It is the responsibility of the user to negate the preconditions of an action upon completion. Effects may be conditional.\\
+
+\textbf{Types} --- PDDLyte allows for any object to be defined. As far as the language is concerned, these are just labels for memory.\\
+
+\textbf{Axioms} --- Axioms are logical formulas that enforce relationships among propositions in a static state. Each axiom is applied in a specified context (i.e. state) and has an implication.\\
+
+\textbf{Requirements} --- packages to be used. I'm not sure how to implement this\\
+
+\textbf{Constants} --- this is a symbol, representing a type, which has the same meaning for all problems of a given domain \cite{pddl98}.\\
+
+\textbf{Comments} --- Comments begin with \texttt{/*} and end in \texttt{*/}. Furthermore, they do not nest and may not be composed within comments.
+
+%\lstinputlisting{code/comments.pdly}
+}
+
+In addition to the planning specification datatypes, the PDDLyte language supports several primitive datatypes, which have identical counterparts in C. \\
+
+\begin{tabular}{| l | r |}
+\hline
+Datatype    & Description \\
+\hline
+\texttt{int} & Integer $\mathbb{Z}$ \\
+\hline
+\texttt{char} & Character\\
+\hline
+\texttt{string} & String of characters\\
+\hline
+\texttt{either} & Union of multiple types\\
+\hline
+\texttt{fluent} & Static type with variable value \\
+\hline
+\end{tabular}\\
+
+
+\subsection{Scope}
+\begin{tabular}{| l | r |}
+\hline
+Name    & Scope\\
+\hline
+Domain name & Global \\
+Problem name & Global \\
+Constant & Domain\\
+Type  & Domain \\
+Action  & Domain \\
+Predicate & Domain \\
+Effect & Domain \\
+\hline
+\end{tabular}
+
+\subsection{Control Statements}
+- not\\
+- and\\
+- or\\
+- forall\\
+- exists\\
+- when --- If a predicate is true before an action, then the effect occurs afterward.\\
+
+\section{Operators}
+Operators are listed below, in order of precedence.\\
+\subsection{Arithmetic operators}
+\begin{tabular}{| l | c | r |}
+\hline
+Operator    & Description     & Type\\
+\hline
+\texttt{\%} & Modulo          & $\mathbb{Z}$ \\
+\hline
+\texttt{*}  & Multiplication  & all \\
+\hline
+\texttt{/}  & Division        & all \\
+\hline
+\texttt{+}  & Addition        & all \\
+\hline
+\texttt{-}  & Subtraction     & all \\
+\hline
+\end{tabular}
+
+\subsection{Conditional Operators}
+
+\begin{tabular}{| l | c | r |}
+\hline
+Operator    & Description     & Type\\
+\hline
+\texttt{==} & Equals          & all \\
+\hline
+\texttt{!=} & not equal       & all \\
+\hline
+\texttt{<}  & Less than       & all \\
+\hline
+\texttt{>}  & Greater than    & all \\
+\hline
+\texttt{<=}  & Less than or equal to     & all \\
+\hline
+\texttt{>=}  & Greater than or equal to     & all \\
+\hline
+\texttt{||}  & Logical OR    & boolean \\
+\hline
+\texttt{\&\&}  & Logical AND   & boolean \\
+\hline
+\texttt{|}  & Bit-wise OR     & all \\
+\hline
+\texttt{\&}  & Bit-wise AND     & all \\
+\hline
+\end{tabular}
+
+% Architecture -----------------------------------------------------------------
+\chapter{Architecture}
+
+% Project Schedule -------------------------------------------------------------
+\chapter{Project Plan}
+The project schedule was inspired from previous students' plans. I have a total of fourteen weeks to organize, code, test, and finalize the code.\\
+1.) Determine language objectives --- ???\\
+2.) Design the language syntax --- ???\\
+a.) Write the scanner and parser --- ???\\
+b.) Design the syntax tree types --- ???\\
+3.) Write code to output tree to graphviz\\
+4.) Design the byte code --- ???\\
+5.) Implement the transition logic --- ???\\
+6.) Project report --- ???\\
+7.) Test --- ???\\
+
+Version control was accomplished with GitHub. Automating the build process is done with Make files and bash shell scripts. GraphViz will be used for visualization in the debug phase. And finally, \LaTeX is utilized for document generation.
+
+% Test Plan --------------------------------------------------------------------
+\chapter{Test Plan}
+
+% Lessons Learned --------------------------------------------------------------
+\chapter{Lessons Learned}
+
+\section{Functions}
+- exist() -- checks the existence of a data type \cite{appl_nasa}.\\
+- at() -- returns true if the system occupies the input\\
+- require() -- to allow for extensibility, this function links in other code.\\
+test and set \\
+
+\section{Example programs}
+\subsection{Monkeys and Bananas}
+A monkey is in a room tormented by a bundle of bananas hanging from the ceiling, just out of its reach. Inside the room, there is also a chair and a stick. Both items are proportioned just right to allow the monkey enough reach to retrieve the bananas -- provided the monkey has the sense to use the items properly. Once the chair is positioned under the bananas, the monkey can step up and use the stick to wackk the bundle free. 
+%\lstinputlisting{mnb.pdly}
+\subsection*{Rule 90}
+
+\backmatter
+
+
+%%% BIBLIOGRAPHY
+%%% -------------------------------------------------------------
+
+\bibliographystyle{alpha}
+\bibliography{ref}
+
+\end{document}
