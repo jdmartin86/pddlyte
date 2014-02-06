@@ -34,7 +34,8 @@
   )
 )
 
-(:plan
-  (move pacman sq_11 sq_12)
-  (move pacman sq_12 sq_13)
-)
+; the optimal plan consists of two moves
+;---------------------------------------
+;  (move pacman sq_11 sq_12)
+;  (move pacman sq_12 sq_13)
+
