@@ -1,0 +1,34 @@
+(define (domain pman)
+  (:predicates
+   (adj ?square-1 ?square-2)
+   (at ?what ?square)
+  )
+   
+  (:action move
+    :parameters (?who ?from ?to)
+    :precondition (and (adj ?from ?to)
+		       (at ?who ?from))
+    :effect (and (not (at ?who ?from))
+		 (at ?who ?to))
+  )		 
+)
+
+(define (problem pman_prob)
+  (:domain pman)
+  (:objects
+   sq_11 sq_12 sq_13
+   pman
+   banana
+  )
+
+  (:init
+   (adj sq_11 sq_12) (adj sq_12 sq_11)
+   (adj sq_12 sq_13) (adj sq_13 sq_12)
+   
+   (at banana sq_13)
+   (at pman sq_11)
+  )
+
+  (:goal (at agent sq_13))
+)
+
