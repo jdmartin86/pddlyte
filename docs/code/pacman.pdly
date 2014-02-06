@@ -17,7 +17,7 @@
   (:domain pman)
   (:objects
    sq_11 sq_12 sq_13
-   pman
+   pacman
    banana
   )
 
@@ -26,9 +26,15 @@
    (adj sq_12 sq_13) (adj sq_13 sq_12)
    
    (at banana sq_13)
-   (at pman sq_11)
+   (at pacman sq_11)
   )
 
-  (:goal (at agent sq_13))
+  (:goal (and (at pacman sq_13)
+  	      (at banana sq_13))
+  )
 )
 
+(:plan
+  (move pacman sq_11 sq_12)
+  (move pacman sq_12 sq_13)
+)
