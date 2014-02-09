@@ -33,6 +33,8 @@ openany, % A chapter may start on either a recto or verso page.
 \usepackage{listings} % Listings for code
 \usepackage[dvipsnames,svgnames]{xcolor} % Color for listing text
 
+\usepackage{tikz}
+
 %%% PAGE LAYOUT 
 %%%------------------------------------------------------------------------------
 
@@ -134,6 +136,23 @@ openany, % A chapter may start on either a recto or verso page.
 \pagestyle{standard}               % Choosing pagestyle and chapter pagestyle
 \aliaspagestyle{chapter}{chap} %
 
+%%% TIKZ
+%%%------------------------------------------------------------------------------
+\usetikzlibrary{arrows,automata}
+\usetikzlibrary{positioning}
+
+\tikzset{
+    state/.style={
+           rectangle,
+           rounded corners,
+           draw=black, very thick,
+           minimum height=2em,
+           inner sep=2pt,
+           text centered,
+           },
+}
+
+
 %%% NEW COMMANDS
 %%%------------------------------------------------------------------------------
 
@@ -186,7 +205,7 @@ pdfauthor={I am the Author} % author
   frame=single,                     % adds a frame around the code
   %keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
   keywordstyle=\color{orange},      % keyword style
-  %language=Octave,                 % the language of the code
+  language=Lisp,                    % the language of the code
   %morekeywords={*,...},            % if you want to add more keywords to the set
   numbers=none,                     % where to put the line-numbers; possible values are (none, left, right)
   %numbersep=5pt,                   % how far the line-numbers are from the code
@@ -210,159 +229,349 @@ pdfauthor={I am the Author} % author
 %\tableofcontents*
 %\clearpage
 
-\section*{Description}
-The PDDLyte language, whose name derives from the Planning Domain Definition Language (PDDL)\cite{pddl98}, is a specification language used to find solutions to planning problems. Similarly to PDDL, problems are specified with an initial state, a set of actions, and a set of goal states. From there, PPDLyte uses causal reasoning to deduce solutions, provided they exist, with a sequence of actions that map the initial state to the goal state(s). The PDDLyte language is limited in comparison to its predecessor, in that it only supports classical planning problems for a single agent: finite, observable, deterministic, fully-accessible  environment descriptions. Another distinguishing characteristic of PDDLyte is in the way it's compiled.\\
-
-Current PDDL implementations use a LISP interpreter to verify the solutions. This is where the life of PDDL ends. The PDDLyte implementation will take a .pdly file as input and will generate C code as an intermediate product; after which it is translated into X86 assembly code. With this design, the high-level reasoning of PDDLyte solutions can easily interface with systems-level C code. This language can be used to express high-level constraints on system. In essence, this will generate a library.\\
-
-Can I manage to provide graphical output?
-
-\section*{Language Specification}
-The syntax of my language is chosen to be nearly identical to PDDL, sans all the parenthesis.
-
-\section*{Datatypes}
-PDDLyte is a strongly-typed language. It inherits nearly all its syntax from PDDL -- sans the annoying parenthesis -- and only a subset of the datatypes. This is intended to provide the minimum set, required to solve classical-planning problems. The basic types in PDDLyte are boolean, integer, character, strings, and user-defined types.
-
+\section{Description}
 {\setlength{\parindent}{0cm}
 
-\textbf{Domains} --- Domains are the global problem descriptor. The requirements, predicates, actions, constants, etc. will be defined in this structure and used to. Only a single domain may be defined per file.
+The PDDLyte language, whose name derives from the Planning Domain Definition Language (PDDL)\cite{pddl98}, is a specification language used to formulate and solve planning problems. Similarly to PDDL, problems are specified with an initial state, a set of actions, and a set of goal states. From there, PPDLyte uses causal reasoning to deduce solutions, provided they exist, as a sequence of actions that map the initial state to the goal state(s). The PDDLyte language is limited in comparison to its predecessor, in that it only supports classical planning problems for a single agent: finite, fully-observable, deterministic, static environment descriptions. Another distinguishing characteristic of PDDLyte is in the way it's compiled.\\
 
-\textbf{Problems} --- Problems include an initial state and one or more goal descriptions. All problems are associated with a domain, which provides the context for the solution to be in.
-
-\textbf{Initial State} --- define the predicates that are true in the system's starting configuration. This can be any valid state within the domain. Unless predicates are specified as true in this statement, they are set false.\\
-
-\textbf{Goal Description} --- The goal description defines the predicate(s) that are true in the system's final configuration(s)\\
-
-\textbf{Actions} --- Actions are the operators that transition the system between states. These are the basic elements which a solution is built\cite{strips70}. There are pre-conditions and effects associated with each action. The pre-conditions must be satisfied for the transition to take place. Furthermore, the effects must be valid according to an active problem description. If no pre-conditions are specified, then an action is always valid. The action definition must know the type of parameter its preconditions are composed of. \\
-
-\textbf{Predicates} --- Predicates consist of a list of declarations that define a property of an object. These can be either true or false. \\
-
-\textbf{Effects} --- Effects describe changes that occur when an action is completed. Predicate states are not affected in anyway by Effects. When an action is complete, the effect is simply set. It is the responsibility of the user to negate the preconditions of an action upon completion. Effects may be conditional.\\
-
-\textbf{Types} --- PDDLyte allows for any object to be defined. As far as the language is concerned, these are just labels for memory.\\
-
-\textbf{Axioms} --- Axioms are logical formulas that enforce relationships among propositions in a static state. Each axiom is applied in a specified context (i.e. state) and has an implication.\\
-
-\textbf{Requirements} --- packages to be used. I'm not sure how to implement this\\
-
-\textbf{Constants} --- this is a symbol, representing a type, which has the same meaning for all problems of a given domain \cite{pddl98}.\\
-
-\textbf{Comments} --- Comments begin with \texttt{/*} and end in \texttt{*/}. Furthermore, they do not nest and may not be composed within comments.
-
-\lstinputlisting{code/comments.pdly}
+Current PDDL implementations use a LISP interpreter to verify the solutions. For most applications, this is where the life of PDDL ends. The PDDLyte implementation will go further and be compiled from C code to X86 assembly. With this design, the high-level reasoning of PDDLyte solutions are able to interface with systems-level C code.
 }
 
-In addition to the planning specification datatypes, the PDDLyte language supports several primitive datatypes, which have identical counterparts in C. \\
 
-\begin{tabular}{| l | r |}
-\hline
-Datatype    & Description \\
-\hline
-\texttt{int} & Integer $\mathbb{Z}$ \\
-\hline
-\texttt{char} & Character\\
-\hline
-\texttt{string} & String of characters\\
-\hline
-\texttt{either} & Union of multiple types\\
-\hline
-\texttt{fluent} & Static type with variable value \\
-\hline
-\end{tabular}\\
+\section{Background}
+Background for languages similar to pddl.
 
 
-\subsection*{Scope}
-\begin{tabular}{| l | r |}
+\section{Motivation}
+Motivation for creating PDDLyte.
+
+
+\section{PDDLyte Pipeline}
+
+\begin{center}
+\begin{tikzpicture}[->,>=stealth']
+
+% pddlyte file node
+\node[] (pdly_file)
+{\texttt{.pdly} file};
+
+% pddlyte compiler note
+ \node[state,    	            % layout (defined above)
+  text width=3cm, 	            % max text width
+  right of= pdly_file, 	        % Position is to the right of pdly_file
+  node distance=3cm, 	            % distance to pdly_file
+  anchor=center]                 % position relative to the center of the 'box'(pddlyte_comp) 
+  (pddlyte_comp) 	
+ {PDDLyte Compiler};
+ 
+% gcc compiler
+ \node[state,    	            % layout (defined above)
+  text width=3cm, 	            % max text width
+  right of= pddlyte_comp, 	    % Position is to the right of pddlyte_comp
+  node distance=5cm, 	            % distance to pddlyte_comp
+  anchor=center]
+  (gcc)
+ {GCC};
+
+% x86 assembler 
+ \node[state,    	        % layout (defined above)
+  text width=3cm, 	        % max text width
+  below of= gcc, 	        % Position is to the right of gcc
+  node distance=2cm, 	        % distance to gcc
+  anchor=center]
+ (assembler)
+ {X86 Assembler};
+ 
+% binary file
+\node[
+     text width=2cm, 	        % max text width
+     left of= assembler, 	    % Position is to the right of assembler
+     node distance=7.5cm, 	        % distance to assembler
+     anchor=center](bin_file)
+    {Binary file};
+
+% audio file?
+%\node[    	                % layout (defined above)
+%  text width=1.5cm, 	        % max text width
+%  left of= assembler, 	    % Position is to the right of assembler
+%  node distance=8cm, 	        % distance to assembler
+%  anchor=center](audio_file)
+%{\texttt{.mp3} file};
+
+ % draw the paths and and print some Text below/above the graph
+ \path    (pdly_file)        edge                                               (pddlyte_comp)
+          (pddlyte_comp)     edge node[anchor=south,above]{\texttt{.c} file}    (gcc)
+          (gcc)              edge node[anchor=left,right]{\texttt{.o} file}    (assembler)
+          (assembler)        edge                                              (bin_file);
+
+          %(assembler)        edge                                              (audio_file);
+
+\end{tikzpicture}
+\end{center}
+
+
+\section{Lexicon}
+PDDLyte will compute boolean statements from conjunctions of atomic objects. In addition to these  datatypes, the PDDLyte language will support integer arithmetic for various quantifications.\\
+PDDLyte is a strongly-typed language. It inherits nearly all its syntax from PDDL and only a subset of the datatypes. This is intended to provide the minimum set, required to solve classical-planning problems.
+
+{\setlength{\parindent}{0cm}
+\subsection{Primitive types}
+
+\textit{Boolean} --- True or false values.
+
+\textit{Strings} --- One or more character elements from the ASCII set comprise a string.
+
+\textit{Integers} --- Any element of the set $\{0, 1, 2, 3, 4, 5, 6, 7, 8, 9 \}$. 
+
+\subsection{Structured types}
+
+\textit{Lists} --- A set of components separated with spaces and enclosed with parentheses: the component's types can be dissimilar.
+
+\textit{Atoms} --- An atom has a string literal identifier and set of associated properties. Properties are a list of atoms. An atom has no properties when it's instantiated. Properties associate in the initial condition and as result of actions.
+
+\subsection{Domains} 
+Domains are the global problem descriptor. Only a single domain may be defined per file. A set of action schemas serve as a definition of a planning domain. The initial state and goal define the specific problem. \cite{ai_rn} All domain preconditions and action parameters must be prefixed with a question mark to distinguish them from the problem objects.
+
+\begin{lstlisting}
+(define (domain <name>)
+          (<types_def>)
+        (<actions_def>)
+    (<predicates_def>))
+\end{lstlisting}
+
+\textit{Types} --- PDDLyte allows for any object to be defined as a list of atoms.
+
+\textit{Actions} --- Actions are the operators that transition the system between states. These are the basic elements which a solution is built\cite{strips70}. There are pre-conditions and effects associated with each action. The pre-conditions must be satisfied for the transition to take place. Furthermore, the effects must be valid according to an active problem description. If no pre-conditions are specified, then an action is always valid. The action definition must know the type of parameter its preconditions are composed of. Actions are defined with a schema. 
+
+\begin{lstlisting}
+(:action  <name>
+          :parameters     (<param_def>)
+          :precondition (<precond_def>)
+          :effect       (<effect_def>))
+\end{lstlisting}
+
+\textit{Parameters} are a list of atoms used in the action's precondition and effect conjunctions.
+
+\begin{lstlisting}
+(:parameters <atom_list>)
+\end{lstlisting}
+
+\textit{Preconditions} are propositions that must be true for an operator to be applied. This is expressed as a logical conjunction of literals.
+
+\begin{lstlisting}
+(:precondition <literal>)
+\end{lstlisting}
+
+\textit{Effects} describe changes that occur when an action is completed. Predicate states are not affected in anyway by Effects. When an action is complete, the effect is simply set. It is the responsibility of the user to negate the preconditions of an action upon completion. This conjunction of proposition will add an edge to the planning graph. Their negation will remove an edge from the planning graph. This is expressed as a conjunction of literals. Effects will always take place at time $t+1$
+
+\begin{lstlisting}
+(:effect <literal>)
+\end{lstlisting}
+
+\textit{Predicates} --- Predicates consist of a list of declarations that define a property of an object. These can be either true or false. 
+
+\begin{lstlisting}
+(:predicates <atom_list>)
+\end{lstlisting}
+
+\subsection{Problems}
+Problems include an initial state and one or more goal descriptions. All problems are associated with a domain, which provide the context for the solution to be in.
+
+\begin{lstlisting}
+(define (problem <name>)
+              (<domain>)
+         (<objects_def>)
+      (<init_state_def>)
+   (<goal_descrip_def>))
+\end{lstlisting}
+
+\textit{Objects} --- specify a list of atoms used to define the problem space.
+
+\begin{lstlisting}
+(:objects <atom_list>)
+\end{lstlisting}
+
+\textit{Initial State} --- define the predicates that are true in the system's starting configuration. This can be any valid state within the domain. Unless predicates are specified as true in this statement, they are set false. This is a conjunction of ground atoms
+
+\begin{lstlisting}
+(:init <atom_list>)
+\end{lstlisting}
+
+\textit{Goal Description} --- The goal description defines the predicate(s) that are true in the system's final configuration(s). This is a conjunction of literals which may contain variables.
+
+\begin{lstlisting}
+(:goal <literal>)
+\end{lstlisting}
+}
+
+\section{Operators}
+Operators will be specified using prefix notation; where the operator is placed to the left of its arguments. This convention is adopted from PDDL, which inherits its syntax from LISP to simplify parsing.\\
+
+{\setlength{\parindent}{0cm}
+\textit{Comments} --- Comments begin with a semicolon (\texttt{;}) and terminate at the next new line. Furthermore, they do not nest and may not be composed within comments.
+
+\begin{lstlisting}
+; commentary ends when the line breaks
+\end{lstlisting}
+
+\subsection{Arithmetic operators}
+A minimal level of integer arithmetic will be supported in PDDLyte. \\
+
+\textit{Assignment} --- Explicit assignments are only permitted with integer values:
+
+\begin{lstlisting}
+(set <atom> <int>)
+\end{lstlisting}
+
+\textit{Modulus} --- The modulus of two integers can be computed:
+
+\begin{lstlisting}
+(mod <int> <int>)
+\end{lstlisting}
+
+\textit{Addition} --- Integer addition is supported for one or more numbers:
+
+\begin{lstlisting}
+(+ <int> ... <int_n>)
+\end{lstlisting}
+
+\textit{Subtraction} --- Integer subtraction is supported for one or more numbers:
+
+\begin{lstlisting}
+(- <int> ... <int_n>)
+\end{lstlisting}
+
+\subsection{Conditional Operators}
+
+\textit{Equal} --- Comparing the value of one or more integers is accomplished with the \texttt{=} predicate. The result evaluates to true if every argument is equal to the others. Otherwise, the result is nil.
+
+\begin{lstlisting}
+(= <int> ... <int_n>)
+\end{lstlisting}
+
+\textit{Less than} --- The \texttt{<} predicate is used to compare if the arguments are in monotonically increasing order; if so, the result is true. Otherwise, the result is nil.
+
+\begin{lstlisting}
+(< <int> ... <int\_n>)
+\end{lstlisting}
+
+\textit{Greater than} --- The \texttt{>} predicate is used to compare if the arguments are in monotonically decreasing order; if so, the result is true. Otherwise, the result is nil.
+
+\begin{lstlisting}
+(> <int> ... <int\_n>)
+\end{lstlisting}
+
+\textit{Less than or equal to} --- The \texttt{<=} predicate is used to compare if the arguments are in monotonically non-decreasing order; if so, the result is true. Otherwise, the result is nil.
+
+\begin{lstlisting}
+(<= <int> ... <int\_n>)
+\end{lstlisting}
+
+
+\textit{Greater than or equal to} --- The \texttt{>=} predicate is used to compare if the arguments are in monotonically non-increasing order; if so, the result is true. Otherwise, the result is nil.
+
+\begin{lstlisting}
+(>= <int> ... <int\_n>)
+\end{lstlisting}
+
+\subsection{Boolean Operators}
+
+\textit{Conjunction} --- Logical conjunctions are formed with the \texttt{and} predicate: 
+
+\begin{lstlisting}
+(and <literal>)
+\end{lstlisting}
+
+\textit{Disjunction} --- Logical disjunctions are formed with the \texttt{or} predicate:
+
+\begin{lstlisting}
+(or <literal>)
+\end{lstlisting}
+
+\textit{Negation} --- The value of a logical conjunction of literals is inverted with the \texttt{not} predicate. The function returns true if its argument is nil, otherwise false.
+
+\begin{lstlisting}
+(not <literal>)
+\end{lstlisting}
+}
+
+\section{Keywords}
+\begin{center}
+\begin{tabular}{ l  l }
+Keyword    & Description\\
 \hline
-Name    & Scope\\
 \hline
-Domain name & Global \\
-Problem name & Global \\
-Constant & Domain\\
-Type  & Domain \\
-Action  & Domain \\
-Predicate & Domain \\
-Effect & Domain \\
+\texttt{define}  & instantiates a domain or problem specification\\
+\hline
+\texttt{domain}  & domain specification \\
+\hline
+\texttt{problem} & problem specification \\
+\hline
+\texttt{:types}  & specifies a list of objects \\
+\hline
+\texttt{:action} & specifies an action \\
+\hline
+\texttt{:precondition} & specifies an action's preconditions \\
+\hline
+\texttt{:effect} & specifies an action's effects\\
+\hline
+\texttt{:parameters} & specifies an action's parameters\\
+\hline
+\texttt{:predicates} & specifies the domain predicates \\
+\hline
+\texttt{:objects} & specifies a problem's objects\\
+\hline
+\texttt{:init} & specifies a problem's initial state\\
+\hline
+\texttt{:goal} & specifies a problem's goal description\\
 \hline
 \end{tabular}
-
-\subsection*{Control Statements}
-- not\\
-- and\\
-- or\\
-- forall\\
-- exists\\
-- when --- If a predicate is true before an action, then the effect occurs afterward.\\
-
-\section*{Operators}
-Operators are listed below, in order of precedence.\\
-\subsection*{Arithmetic operators}
-\begin{tabular}{| l | c | r |}
-\hline
-Operator    & Description     & Type\\
-\hline
-\texttt{\%} & Modulo          & $\mathbb{Z}$ \\
-\hline
-\texttt{*}  & Multiplication  & all \\
-\hline
-\texttt{/}  & Division        & all \\
-\hline
-\texttt{+}  & Addition        & all \\
-\hline
-\texttt{-}  & Subtraction     & all \\
-\hline
-\end{tabular}
-
-\subsection*{Conditional Operators}
-
-\begin{tabular}{| l | c | r |}
-\hline
-Operator    & Description     & Type\\
-\hline
-\texttt{==} & Equals          & all \\
-\hline
-\texttt{!=} & not equal       & all \\
-\hline
-\texttt{<}  & Less than       & all \\
-\hline
-\texttt{>}  & Greater than    & all \\
-\hline
-\texttt{<=}  & Less than or equal to     & all \\
-\hline
-\texttt{>=}  & Greater than or equal to     & all \\
-\hline
-\texttt{||}  & Logical OR    & boolean \\
-\hline
-\texttt{\&\&}  & Logical AND   & boolean \\
-\hline
-\texttt{|}  & Bit-wise OR     & all \\
-\hline
-\texttt{\&}  & Bit-wise AND     & all \\
-\hline
-\end{tabular}
+\end{center}
 
 
+\section{GraphPlan Algorithm}
+Underlying the PPDLyte language is a graph-based planner that generates solutions to the program's problem. The algorithm which computes the solution is the GraphPlan \cite{source} algorithm will be used to solve problems.\\
 
+- Phase one --- plan graph expansion: creates graph encoding pair-wise consistency and reachability of actions and propositions from initial state. Graph includes, as a subset, all plans that are complete and consistent.\\
+- Phase two --- Solution extraction: graph is treated as kind of a constraint satisfaction problem. Selects whether or not to perform each action at each time point by assigning CSP variables and testing consistency.\\
 
-\section*{Functions}
-- exist() -- checks the existence of a data type \cite{appl_nasa}.\\
-- at() -- returns true if the system occupies the input\\
-- require() -- to allow for extensibility, this function links in other code.\\
-test and set \\
+the solver works under the premise that an action can be executed in a given state, provided the preconditions are satisfied. That is $a \in A_{s} \leftrightarrow s \models P_{s}$
 
-\section*{Example programs}
-\subsection*{Monkeys and Bananas}
+\section{Testing}
+Testing procedures stressed two factors: function and performance. Testin compares an input-output pair to a specification. Unit testing validates every piece of the program independent from the rest of the code. Overall program. 
+
+\section{Example program}
+A program in PPDLyte consists of a domain and problem statement. Executing the program solves the problem and generates output.
+
+\subsection{Monkeys and Bananas}
 A monkey is in a room tormented by a bundle of bananas hanging from the ceiling, just out of its reach. Inside the room, there is also a chair and a stick. Both items are proportioned just right to allow the monkey enough reach to retrieve the bananas -- provided the monkey has the sense to use the items properly. Once the chair is positioned under the bananas, the monkey can step up and use the stick to wackk the bundle free. 
 %\lstinputlisting{mnb.pdly}
-\subsection*{Rule 90}
+
+\subsection{Pacman}
+This program is simple to conceptualize, and therefore should be a good first step in generating plans. Pacman starts in one side of the world, with the goal of eating the bananas in another square. The solution is to simply move right twice.\\
+
+\begin{center}
+\begin{tikzpicture}[scale=2]
+   \draw[black] (0,0) grid (3,1);
+   \node[](pacman)at(0.5,0.5){\includegraphics[scale=0.1]{../imgs/pacman}};
+   \node[](banana)at(2.5,0.5){\includegraphics[scale=0.4]{../imgs/banana}};
+\end{tikzpicture}
+\end{center}
+
+Example PDDLyte code specifies the problem.
+
+
 
 \backmatter
+
+
+
 
 
 %%% BIBLIOGRAPHY
 %%% -------------------------------------------------------------
 
-\bibliographystyle{alpha}
+\bibliographystyle{plain}
 \bibliography{ref}
 
 \end{document}
