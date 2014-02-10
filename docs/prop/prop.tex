@@ -221,26 +221,49 @@ pdfauthor={I am the Author} % author
 }
 
 
-%\begin{abstract}
-%\lipsum[1-2]
-%\end{abstract}
+\begin{abstract}
+The PDDLyte language, whose name derives from the Planning Domain Definition Language (PDDL)\cite{pddl98}, is a specification language used to formulate and solve planning problems. Similarly to PDDL, problems are specified with an initial state, a goal description, and a domain on which to plan over. From there, PPDLyte uses causal reasoning to deduce solutions, provided they exist, as a sequence of actions that map the initial state to the goal state(s). The PDDLyte language is limited in comparison to its predecessor, in that it will only support classical planning problems for a single agent: finite, fully-observable, deterministic, static environment descriptions. Another distinguishing characteristic of PDDLyte is in the way it's compiled.\\
+
+Current PDDL implementations use LISP-based interpreters to verify the solutions. For most applications, this is where the life of PDDL ends. The PDDLyte implementation will go further and be compiled to C code, then to X86 assembly. With this design, the high-level reasoning of PDDLyte solutions will be amenable to systems-level C code interfaces.
+\end{abstract}
 %\clearpage
 
 %\tableofcontents*
 %\clearpage
 
-\section{Description}
-{\setlength{\parindent}{0cm}
-
-The PDDLyte language, whose name derives from the Planning Domain Definition Language (PDDL)\cite{pddl98}, is a specification language used to formulate and solve planning problems. Similarly to PDDL, problems are specified with an initial state, a set of actions, and a set of goal states. From there, PPDLyte uses causal reasoning to deduce solutions, provided they exist, as a sequence of actions that map the initial state to the goal state(s). The PDDLyte language is limited in comparison to its predecessor, in that it only supports classical planning problems for a single agent: finite, fully-observable, deterministic, static environment descriptions. Another distinguishing characteristic of PDDLyte is in the way it's compiled.\\
-
-Current PDDL implementations use a LISP interpreter to verify the solutions. For most applications, this is where the life of PDDL ends. The PDDLyte implementation will go further and be compiled from C code to X86 assembly. With this design, the high-level reasoning of PDDLyte solutions are able to interface with systems-level C code.
-}
-
 
 \section{Background}
-Background for languages similar to pddl.
 
+A planning problem asks if a goal description can be acheived from its initial state \cite{ai_rn}. If there's a tree of all possible actions from the initial state to every subsequent successor state, and the tree is indexed in such a way that allows us to read off the solution. This tree is of exponential size, which makes this approach impractical. A planning graph is a polynomial-size approximation to the full tree. This approach can't definitively answer if the goal is reachable from the initial state, btr it does estimate the number of steps it takes to reach thee foal. The esitmate is always correct when it reports the goal is not reachable; hence it never overestimates and is an admissible hueristic. Planning graphs work for propositional planning problems -- ones with no variables.Each action at level Ai is connected to its preconditions at Si and its effects at $S_{i+1}$. So a literal appears because an action caused it, wut we alo want to say that a literal can persist inf no action degates it. this is represented as a persistence actoin -- called a no-op.\\
+
+What we build is a structure where ever action level constatins all the actions that are applicable in the ith state level along with the constraints saying that two actions cannont both be executed at the same level. every state level contains tll the literals that could result from any possible choice of actions in the previous action level along with the constraints saying which paits of literals are bot possible. it is important to not that the proces of constructing the planning graph does not require choosing among action, which woudl entail conbinatorial search. instaed, it just records the impossibility of certain choices using mutex links.\\
+
+a planning fraph is polynomial in size of the planning problem. for a plannign problen with l literals and a actions, ach ith sstate has no more than l nodes and l squared mytex linkgs, and $2(al+l)$ precondition and effect links. thus an entire graph iwht n levels had size $O(n(a+l)^2)$. the time to build the fraph had the same complexity.\\
+
+if any foal literal fails to appear in the final level of the graph, then tjhe problem is unsolvable. \\
+
+i hope to encode the state transistion system which can be defined as a tuple $\Sigma = (S,A,E,\gamma)$. this formalism doesn't define an initial state and goal state.
+
+planning is the explicit deliberation process that chooses and organizes actions by anticipating their outcomes -- how to achieve some prestate objectives computationally. understanding intellegnt behavior involves understanding plans that were made. and how those plans were formulated and executed. \\
+
+two kinds of planning: domain specific, and domain independent.\\
+- domain-specific -- perception planning, path planning, motion planning, manipulation planning, comminication planning\\
+- domain-independent planning -- generic representations and techniques to plan for commonalities in plans. \\
+- there's no consideration of time. it is implicit. plans are assumed to be sequential list of actions, i.e. no parallelism.\\
+
+objects require typinf extension. iniitial state descirbes the topology.\\
+
+a olan is a sequence of action $\pi = \lbrack a_1, ... ,a_k\rbrack$ with $k>0$. not every plan is a solution. therefore, a plan is a solution to a planning problem if the state transistion funciton $\gamma(s_0,\pi) = G$. Solutions are redundant if there exists a subsequence of \\
+
+i'm using the srips represestation of classical planning representation.i use first order literals to define actions.
+
+
+Underlying the PPDLyte language is a graph-based planner that generates solutions to the program's problem. The algorithm which computes the solution is the GraphPlan \cite{source} algorithm will be used to solve problems.\\
+
+- Phase one --- plan graph expansion: creates graph encoding pair-wise consistency and reachability of actions and propositions from initial state. Graph includes, as a subset, all plans that are complete and consistent.\\
+- Phase two --- Solution extraction: graph is treated as kind of a constraint satisfaction problem. Selects whether or not to perform each action at each time point by assigning CSP variables and testing consistency.\\
+
+the solver works under the premise that an action can be executed in a given state, provided the preconditions are satisfied. That is $a \in A_{s} \leftrightarrow s \models P_{s}$
 
 \section{Motivation}
 Motivation for creating PDDLyte.
@@ -311,26 +334,28 @@ Motivation for creating PDDLyte.
 
 
 \section{Lexicon}
-PDDLyte will compute boolean statements from conjunctions of atomic objects. In addition to these  datatypes, the PDDLyte language will support integer arithmetic for various quantifications.\\
-PDDLyte is a strongly-typed language. It inherits nearly all its syntax from PDDL and only a subset of the datatypes. This is intended to provide the minimum set, required to solve classical-planning problems.
-
 {\setlength{\parindent}{0cm}
+
+The syntax in PDDLyte derives from PDDL. The components of each language focus around the classical-planning representation of STRIPS, which itself is a restricted, state-transition system $\Sigma = (S,A,\gamma)$ over a function-free, first-order language $\mathcal{L}$. For more information on the formalism of PDDL, see \cite{auto_planning}.\\
+ 
+In essence, PDDLyte will interpret conjunctions of predicates, themselves comprised of grounded atoms and sets literals, in order to solve problems. Therefore, the language must represent atoms, literals, and booleans. Additionally, the PDDLyte language will support integer arithmetic for various quantifications. 
+
 \subsection{Primitive types}
 
 \textit{Boolean} --- True or false values.
 
-\textit{Strings} --- One or more character elements from the ASCII set comprise a string.
-
 \textit{Integers} --- Any element of the set $\{0, 1, 2, 3, 4, 5, 6, 7, 8, 9 \}$. 
+
+\textit{Objects} --- Generic datatypes identified with symbols, consisting of one or more character elements from the ASCII set. Fluent objects must be prefixed with a question mark: \texttt{?<var>}.
 
 \subsection{Structured types}
 
 \textit{Lists} --- A set of components separated with spaces and enclosed with parentheses: the component's types can be dissimilar.
 
-\textit{Atoms} --- An atom has a string literal identifier and set of associated properties. Properties are a list of atoms. An atom has no properties when it's instantiated. Properties associate in the initial condition and as result of actions.
+\textit{Atoms} --- An atom is a predicate with a specified number of object arguments. An atom is said to be grounded when they relate to specific objects with values -- not variables.
 
 \subsection{Domains} 
-Domains are the global problem descriptor. Only a single domain may be defined per file. A set of action schemas serve as a definition of a planning domain. The initial state and goal define the specific problem. \cite{ai_rn} All domain preconditions and action parameters must be prefixed with a question mark to distinguish them from the problem objects.
+Domains can be thought of as universe. What describes these universes are states, actions and means to use actions at states to make transitions. Only a single domain may be defined per file. 
 
 \begin{lstlisting}
 (define (domain <name>)
@@ -339,9 +364,9 @@ Domains are the global problem descriptor. Only a single domain may be defined p
     (<predicates_def>))
 \end{lstlisting}
 
-\textit{Types} --- PDDLyte allows for any object to be defined as a list of atoms.
+\textit{Types} --- Types are symbols that specify objects of the domain. This attribute is an extension of PDDL, but will be inherently supported with PDDLyte.
 
-\textit{Actions} --- Actions are the operators that transition the system between states. These are the basic elements which a solution is built\cite{strips70}. There are pre-conditions and effects associated with each action. The pre-conditions must be satisfied for the transition to take place. Furthermore, the effects must be valid according to an active problem description. If no pre-conditions are specified, then an action is always valid. The action definition must know the type of parameter its preconditions are composed of. Actions are defined with a schema. 
+\textit{Actions} --- Actions are the operators that transition the system between states. These are represented as triples, $a = (name, precondition, effect)$, and are the basic elements of a solution \cite{strips70}. In PDDL, an action's name is considered both the unique symbol and a set of parameters that define the operation. The pre-conditions must be satisfied for the transition to take place. Furthermore, the effects must be valid according to an active problem description. If no pre-conditions are specified, then an action is always valid. 
 
 \begin{lstlisting}
 (:action  <name>
@@ -353,29 +378,29 @@ Domains are the global problem descriptor. Only a single domain may be defined p
 \textit{Parameters} are a list of atoms used in the action's precondition and effect conjunctions.
 
 \begin{lstlisting}
-(:parameters <atom_list>)
+:parameters (?<name> - <type> ... ?<name_n> - <type_n>)
 \end{lstlisting}
 
-\textit{Preconditions} are propositions that must be true for an operator to be applied. This is expressed as a logical conjunction of literals.
+\textit{Preconditions} are propositions that must be true for an operator to be applied. This is expressed as a logical conjunction of literals. \textit{Literals} are positive or negative atoms.
 
 \begin{lstlisting}
-(:precondition <literal>)
+:precondition (and (<literal>) ...)
 \end{lstlisting}
 
-\textit{Effects} describe changes that occur when an action is completed. Predicate states are not affected in anyway by Effects. When an action is complete, the effect is simply set. It is the responsibility of the user to negate the preconditions of an action upon completion. This conjunction of proposition will add an edge to the planning graph. Their negation will remove an edge from the planning graph. This is expressed as a conjunction of literals. Effects will always take place at time $t+1$
+\textit{Effects} describe changes that occur when an action is completed at the successor state. This is expressed as a logical conjunction of literals. Furthermore, developers should be mindful to balance the preconditions with the effects; as predicate states are not automatically negated by transitions.
 
 \begin{lstlisting}
-(:effect <literal>)
+:effect (and (<literal>) ...)
 \end{lstlisting}
 
-\textit{Predicates} --- Predicates consist of a list of declarations that define a property of an object. These can be either true or false. 
+\textit{Predicates} --- Predicates define relationships between object variables. These can be static relations that hold from state to state, or fluent relations. Each predicate is defined with a symbolic name and one or more object name-type groups; where the object name is separated from the type with a dash:
 
 \begin{lstlisting}
-(:predicates <atom_list>)
+(:predicates (pred ?<name> - <type> t...) ...)
 \end{lstlisting}
 
 \subsection{Problems}
-Problems include an initial state and one or more goal descriptions. All problems are associated with a domain, which provide the context for the solution to be in.
+Problems are triples defined as $P = (\Sigma, s_0, G)$. This inlcudes a domain $\Sigma$ an initial state $s_0$, and a set of ground literals describing the goal condition $G$.
 
 \begin{lstlisting}
 (define (problem <name>)
@@ -385,19 +410,20 @@ Problems include an initial state and one or more goal descriptions. All problem
    (<goal_descrip_def>))
 \end{lstlisting}
 
-\textit{Objects} --- specify a list of atoms used to define the problem space.
+\textit{Objects} --- Objects refer to those used in the problem configuration. Each object is declared with a symbolic name and one or more object name-type groups; where the object name is separated from the type with a dash:
+
 
 \begin{lstlisting}
-(:objects <atom_list>)
+(:objects ?<name> - <type> ... ?<name_n> - <type_n>))
 \end{lstlisting}
 
-\textit{Initial State} --- define the predicates that are true in the system's starting configuration. This can be any valid state within the domain. Unless predicates are specified as true in this statement, they are set false. This is a conjunction of ground atoms
+\textit{Initial State} --- The initial state defines the predicates that are true in the system's starting configuration. This can be any valid state within the domain and is written as a conjunction of ground literals.
 
 \begin{lstlisting}
 (:init <atom_list>)
 \end{lstlisting}
 
-\textit{Goal Description} --- The goal description defines the predicate(s) that are true in the system's final configuration(s). This is a conjunction of literals which may contain variables.
+\textit{Goal Description} --- The goal description defines the predicates that are true in the system's final configuration. This is a conjunction of grounded literals.
 
 \begin{lstlisting}
 (:goal <literal>)
@@ -527,18 +553,6 @@ Keyword    & Description\\
 \hline
 \end{tabular}
 \end{center}
-
-
-\section{GraphPlan Algorithm}
-Underlying the PPDLyte language is a graph-based planner that generates solutions to the program's problem. The algorithm which computes the solution is the GraphPlan \cite{source} algorithm will be used to solve problems.\\
-
-- Phase one --- plan graph expansion: creates graph encoding pair-wise consistency and reachability of actions and propositions from initial state. Graph includes, as a subset, all plans that are complete and consistent.\\
-- Phase two --- Solution extraction: graph is treated as kind of a constraint satisfaction problem. Selects whether or not to perform each action at each time point by assigning CSP variables and testing consistency.\\
-
-the solver works under the premise that an action can be executed in a given state, provided the preconditions are satisfied. That is $a \in A_{s} \leftrightarrow s \models P_{s}$
-
-\section{Testing}
-Testing procedures stressed two factors: function and performance. Testin compares an input-output pair to a specification. Unit testing validates every piece of the program independent from the rest of the code. Overall program. 
 
 \section{Example program}
 A program in PPDLyte consists of a domain and problem statement. Executing the program solves the problem and generates output.
