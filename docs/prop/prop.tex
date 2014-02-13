@@ -222,9 +222,9 @@ pdfauthor={I am the Author} % author
 
 
 \begin{abstract}
-The PDDLyte language, whose name derives from the Planning Domain Definition Language (PDDL)\cite{pddl98}, is a symbolic, specification language used to formulate and solve planning problems. Similarly to PDDL, problems are specified with an initial state, a goal description, and a domain on which to plan over. From there, PPDLyte uses causal reasoning to deduce solutions, provided they exist, as a sequence of actions that map the initial state to the goal state(s). The PDDLyte language is limited in comparison to its predecessor, in that it will only support classical planning problems for a single agent: finite, fully-observable, deterministic, static environment descriptions. Another distinguishing characteristic of PDDLyte is in the way it's compiled.\\
+The PDDLyte language, whose name derives from the Planning Domain Definition Language (PDDL)\cite{pddl98}, is a symbolic, specification language used to formulate and solve planning problems. Similarly to PDDL, problems are specified with an initial state, a goal description, and a domain on which to plan over. From there, PPDLyte uses causal reasoning to deduce solutions. Provided a solution exists, it will be output as a sequence of actions mapping the initial state to the goal state(s). The PDDLyte language is limited in comparison to its predecessor, in that it will only support classical planning problems for a single agent: finite, fully-observable, deterministic, static environment descriptions. PDDLyte is also distinguished in the way it is compiled.\\
 
-Current PDDL implementations use CLISP-based interpreters to verify the solutions. For most applications, this is where the life of PDDL ends. The PDDLyte implementation will go further and be compiled to C code, then to X86 assembly. With this design, the high-level reasoning of PDDLyte solutions will be amenable to systems-level C code interfaces.
+Current PDDL implementations use CLISP-based interpreters to verify the solutions \cite{pddl98}. For most applications, this is where the life of PDDL ends. The PDDLyte implementation will go further and be compiled to C code, then to X86 assembly. With this design, the high-level reasoning of PDDLyte solutions will be amenable to systems-level C code interfaces.
 \end{abstract}
 %\clearpage
 
@@ -235,7 +235,7 @@ Current PDDL implementations use CLISP-based interpreters to verify the solution
 \section{Background: Planning}
 {\setlength{\parindent}{0cm}
 
-Automated planning is a branch of artificial intelligence that helps characterize intelligent behavior. Plans are explicitly deliberated in a process that chooses prearranged actions to achieve an objective. A planning problem asks if a goal description can be achieved from its initial state \cite{ai_rn}. In classical planning, actions are assumed to be finite sets of operators that transition a system from one state to another; hence a solution to this problem is a sequence, $\{A\}$, of actions. Every plausible state of a system can be represented as vertices on a  graph, and transitions that connect these states represent edges. In this framework, finding a solution is reduced to searching the state-space graph for a path that connects the initial state to the final state. Let's take a closer look at how this is done with the PDDLyte language.
+Automated planning is a branch of artificial intelligence that helps characterize intelligent behavior. Plans are explicitly deliberated in a process that chooses prearranged actions to achieve an objective. A planning problem asks if a goal description can be achieved from its initial state. In classical planning, actions are assumed to be finite sets of operators that transition a system from one state to another; hence a solution to this problem is a sequence, $\{A_i\}$, of actions \cite{ai_rn}. Every plausible system state can be represented as vertices on a  graph, and transitions that connect these states represent edges. In this framework, finding a solution is reduced to searching the state-space graph for a path that connects the initial state to the final state. Let's take a closer look at how this is done with the PDDLyte language.
 
 
 \section{Example program: Pacman}
@@ -245,6 +245,9 @@ Pacman, with his ever-present, unperceptive objective to feed himself, can certa
 \begin{center}
 \begin{tikzpicture}[scale=2]
    \draw[black] (0,0) grid (3,1);
+   \node[] at (0.12, 0.9) {$s_0$};
+   \node[] at (1.12, 0.9) {$s_1$};
+   \node[] at (2.12, 0.9) {$G$};
    \node[](pacman)at(0.5,0.5){\includegraphics[scale=0.1]{../imgs/pacman}};
    \node[](banana)at(2.5,0.5){\includegraphics[scale=0.4]{../imgs/banana}};
 \end{tikzpicture}
@@ -268,21 +271,21 @@ With this small amount of information, the planning problem can be formulated wi
 \end{tikzpicture}
 \end{center}
 
-When problems and their corresponding domains are specified formally in PDDLyte, graphs like these will be generated and transversed for solutions. If a solution is available -- which is guaranteed to be discerned from the completeness of the search algorithm -- then it will be returned as a sequence of actions, as shown in the example code.\\
+When problems and their corresponding domains are specified formally in PDDLyte, graphs like these will be generated and transversed for solutions. If a solution is available -- which is guaranteed to be discerned from the completeness of the search algorithm -- then it will be returned, as shown in the example code.\\
 
 
 \lstinputlisting{../code/pacman.pdly}
 
 
 \section{Motivation}
-Beyond Pacman, there exists a myriad of planning problems beckoning for description. What set of actions should a person take when driving to work? What operations are required to route secure network traffic around China? Using a planning-specification language organizes the high-level reason needed to solve these problems.\\
+Beyond Pacman, myriads of planning problems beckon for description. What set of actions should a person take when driving to work? What operations are required to route secure network traffic around China? Capturing the high-level reason needed to formulate these problems is only achievable with the proper class of language.\\
 
-PDDLyte is designed as a symbolic language to accomodate the generality of problems it is intended to describe. The developer should have the means to create and give meaning to any entity.\\
+Historically, symbolic languages have shown to be amenable to the generality of planning problems. It is for this reason that PDDLyte is chosen to be symbolic. Moreover, the underpinning of computational symbolism seems sophisticated and appealing to create.\\
 
-Overall I hope the language can serve a purpose in the planning community. Perhaps those in academia will find comfort in a familiar syntax and run PDDLyte for instructional purposes. Those in the commercial realm may initially balk at the language's extensibility, but eventually discover uses for it in simulation or operations.
+Hopefully the PDDLyte language can serve a purpose in the planning community. Perhaps those in academia will find comfort in a familiar syntax and run PDDLyte for instructional purposes. Those in the commercial realm may initially balk at the language's extensibility, but eventually discover uses for it in simulation or operations. Draw your own conclusions as you read further. 
 
 \section{PDDLyte Pipeline}
-A planning domain and problem will be described in a \texttt{.pdly} file. The compiler will first translate into C code -- opening up the opportunity for interfacing with other code. From there, the code will be compiled into a machine language executable. 
+A planning domain and problem will be described in a \texttt{.pdly} file. The compiler will first translate the plan into C code -- opening up the opportunity for interfacing with other systems-level software. From there, the code can be compiled into a machine language executable using standard processing.
 \begin{center}
 \begin{tikzpicture}[->,>=stealth']
 
@@ -319,11 +322,11 @@ A planning domain and problem will be described in a \texttt{.pdly} file. The co
  
 % binary file
 \node[
-     text width=2.5cm, 	        % max text width
+     text width=3.0cm, 	        % max text width
      left of= assembler, 	    % Position is to the right of assembler
-     node distance=7.5cm, 	        % distance to assembler
+     node distance=7.0cm, 	        % distance to assembler
      anchor=center](bin_file)
-    {Machine Code};
+    {$\{A_i\}$ = \texttt{.plan} file};
 
 % audio file?
 %\node[    	                % layout (defined above)
@@ -347,7 +350,7 @@ A planning domain and problem will be described in a \texttt{.pdly} file. The co
 
 \section{Lexicon}
 
-The syntax in PDDLyte derives from PDDL. The components of each language focus around the classical-planning representation of STRIPS, which itself is a restricted, state-transition system $\Sigma = (S,A,\gamma)$ over a function-free, first-order language $\mathcal{L}$. For more information on the formalism of PDDL, see \cite{auto_planning}.\\
+The syntax in PDDLyte derives from PDDL. The components of each language focus around the classical-planning representation of STRIPS, which itself is a restricted, state-transition system $\Sigma = (S,A,\gamma)$ over a function-free, first-order language $\mathcal{L}$. Further details of this language's mathematical identity will be described in the final report. If your curiosity find this unsatisfying, see \cite{auto_planning} for a functional and set-theoretic description of PDDL, or e-mail the author.\\
 \subsection{Primitive types}
 
 \textit{Symbols} --- Extensible data objects with property lists that denote objects.
@@ -358,10 +361,10 @@ The syntax in PDDLyte derives from PDDL. The components of each language focus a
 
 \subsection{Structured types}
 
-\textit{Lists} --- A set of components separated with spaces and enclosed with parentheses: the component's types can be dissimilar.
+\textit{Lists} --- A set of components separated with spaces and enclosed with parentheses: the component's types can be dissimilar. Although lists are included in the specification, they play a small role in writing PDDLyte programs. Therefore, no list operations will be provided for users to implement.
 
 \subsection{Domains} 
-Domains can be thought of as universe. What describes these universes are states, actions and means to use actions at states to make transitions. Only a single domain may be defined per file. 
+In the context of planning, domains can be thought of as universes. What describes these universes are states, actions and a means for transitioning. Only a single domain may be defined per file. 
 
 \begin{lstlisting}
 (define (domain <name>)
@@ -399,14 +402,14 @@ Domains can be thought of as universe. What describes these universes are states
 :effect (and (<literal>) ...)
 \end{lstlisting}
 
-\textit{Predicates} --- Predicates define relationships between object variables. These can be static relations that hold from state to state, or fluent relations. Each predicate is defined with a symbolic name and one or more object name-type groups; where the object name is separated from the type with a dash:
+\textit{Predicates} --- Predicates define relationships between object variables. These can be static relations that hold from state to state or fluent relations. Each predicate is defined with a symbolic name and one or more object name-type groups; where the object name is separated from the type with a dash:
 
 \begin{lstlisting}
 (:predicates (pred ?<name> - <type> t...) ...)
 \end{lstlisting}
 
 \subsection{Problems}
-Problems are triples defined as $P = (\Sigma, s_0, G)$. This inlcudes a domain $\Sigma$ an initial state $s_0$, and a set of ground literals describing the goal condition $G$.
+Problems are triples defined as $P = (\Sigma, s_0, G)$. This inlcudes a domain $\Sigma$, an initial state $s_0$, and a set of ground literals describing the goal condition, $G$.
 
 \begin{lstlisting}
 (define (problem <name>)
@@ -499,22 +502,6 @@ Keyword    & Description\\
 \end{tabular}
 \end{center}
 
-
-
-
-Computationally, this accomplished Planning occurs with respect to a domain. There can be domain-specific plans focused on topics such as perception, motion, or communication, to name a few. There may also be domain-independent plans, which harness the commonality in domain-specific plans to plan for generalities.\\
-
-In STRIPS-based planning, there is no explicit reference to time. Plans in this domain are assumed to have solutions which themselves are sequences of actions. This implies there is no parallelism in the solution.  Planning graphs are typically exponential in size. The backbone of this language uses a polynomial approximation to a full planning graph.
-
-
-What we build is a structure where ever action level constatins all the actions that are applicable in the ith state level along with the constraints saying that two actions cannont both be executed at the same level. every state level contains all the literals that could result from any possible choice of actions in the previous action level along with the constraints saying which paits of literals are bot possible. it is important to note that the process of constructing the planning graph does not require choosing among action, which would entail combinatorial search. instead, it just records the impossibility of certain choices using mutex links.\\
-
-If any goal literal fails to appear in the final level of the graph, then the problem is unsolvable. \\
-
-- Phase one --- plan graph expansion: creates graph encoding pair-wise consistency and reachability of actions and propositions from initial state. Graph includes, as a subset, all plans that are complete and consistent.\\
-- Phase two --- Solution extraction: graph is treated as kind of a constraint satisfaction problem. Selects whether or not to perform each action at each time point by assigning CSP variables and testing consistency.\\
-
-the solver works under the premise that an action can be executed in a given state, provided the preconditions are satisfied. That is $a \in A_{s} \leftrightarrow s \models P_{s}$
 }
 \backmatter
 
