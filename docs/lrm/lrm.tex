@@ -1,0 +1,478 @@
+%%% DOCUMENTCLASS 
+%%%-------------------------------------------------------------------------------
+
+\documentclass[
+a4paper, % Stock and paper size.
+11pt, % Type size.
+% article,
+% oneside, 
+onecolumn, % Only one column of text on a page.
+% openright, % Each chapter will start on a recto page.
+% openleft, % Each chapter will start on a verso page.
+openany, % A chapter may start on either a recto or verso page.
+]{memoir}
+
+%%% PACKAGES 
+%%%------------------------------------------------------------------------------
+
+\usepackage[utf8]{inputenc} % If utf8 encoding
+% \usepackage[lantin1]{inputenc} % If not utf8 encoding, then this is probably the way to go
+\usepackage[T1]{fontenc}    %
+\usepackage[english]{babel} % English please
+\usepackage[final]{microtype} % Less badboxes
+%\usepackage{sectsty}% Format sections
+
+% \usepackage{kpfonts} %Font
+
+\usepackage{amsmath,amssymb,mathtools} % Math
+
+\usepackage{tikz} % Figures
+\usepackage{graphicx} % Include figures
+
+\usepackage{braket} % Brackets
+\usepackage{backnaur}% BNR Notation
+
+\usepackage{listings} % Listings for code
+\usepackage[dvipsnames,svgnames]{xcolor} % Color for listing text
+
+\usepackage{tocstyle}
+\usetocstyle{KOMAlike}
+
+%%% PAGE LAYOUT 
+%%%------------------------------------------------------------------------------
+
+\setlrmarginsandblock{0.15\paperwidth}{*}{1} % Left and right margin
+\setulmarginsandblock{0.2\paperwidth}{*}{1}  % Upper and lower margin
+\checkandfixthelayout
+
+
+%%% SECTIONAL DIVISIONS
+%%%------------------------------------------------------------------------------
+
+%\makeatletter % Standard Chapter Style
+%\makechapterstyle{standard}{
+%  \setlength{\beforechapskip}{0\baselineskip}
+%  \setlength{\midchapskip}{1\baselineskip}
+%  \setlength{\afterchapskip}{8\baselineskip}
+%  \renewcommand{\chapterheadstart}{\vspace*{\beforechapskip}}
+%  \renewcommand{\chapnamefont}{\centering\normalfont\Large}
+%  \renewcommand{\printchaptername}{\chapnamefont \@chapapp}
+%  \renewcommand{\chapternamenum}{\space}
+%  \renewcommand{\chapnumfont}{\normalfont\Large}
+%  \renewcommand{\printchapternum}{\chapnumfont \thechapter}
+%  \renewcommand{\afterchapternum}{\par\nobreak\vskip \midchapskip}
+%  \renewcommand{\printchapternonum}{\vspace*{\midchapskip}\vspace*{5mm}}
+%  \renewcommand{\chaptitlefont}{\centering\bfseries\LARGE}
+%  \renewcommand{\printchaptertitle}[1]{\chaptitlefont ##1}
+%  \renewcommand{\afterchaptertitle}{\par\nobreak\vskip \afterchapskip}
+%}
+%\makeatother
+%\chapterstyle{standard}
+
+\chapterstyle{komalike}
+\setsecheadstyle{\normalfont\large\bfseries}
+%\setsubsecheadstyle{\normalfont\normalsize\bfseries}
+%\setparaheadstyle{\normalfont\normalsize\bfseries}
+%\setparaindent{0pt}%\setafterparaskip{0pt}
+\setaftersecskip{0.5pc}
+\setbeforesecskip{1pc}
+
+
+%%% FLOATS AND CAPTIONS
+%%%------------------------------------------------------------------------------
+
+\makeatletter                  % You do not need to write [htpb] all the time
+\renewcommand\fps@figure{htbp} %
+\renewcommand\fps@table{htbp}  %
+\makeatother                   %
+
+\captiondelim{\space } % A space between caption name and text
+\captionnamefont{\small\bfseries} % Font of the caption name
+\captiontitlefont{\small\normalfont} % Font of the caption text
+
+\changecaptionwidth          % Change the width of the caption
+\captionwidth{1\textwidth} %
+
+%%% ABSTRACT
+%%%------------------------------------------------------------------------------
+
+\renewcommand{\abstractnamefont}{\normalfont\small\bfseries} % Font of abstract title
+\setlength{\absleftindent}{0.1\textwidth} % Width of abstract
+\setlength{\absrightindent}{\absleftindent}
+
+%%% HEADER AND FOOTER 
+%%%------------------------------------------------------------------------------
+
+\makepagestyle{standard} % Make standard pagestyle
+
+\makeatletter                 % Define standard pagestyle
+\makeevenfoot{standard}{}{}{} %
+\makeoddfoot{standard}{}{}{}  %
+\makeevenhead{standard}{\bfseries\thepage\normalfont\qquad\small\leftmark}{}{}
+\makeoddhead{standard}{}{}{\small\rightmark\qquad\bfseries\thepage}
+% \makeheadrule{standard}{\textwidth}{\normalrulethickness}
+\makeatother                  %
+
+\makeatletter
+\makepsmarks{standard}{
+\createmark{chapter}{both}{shownumber}{\@chapapp\ }{ \quad }
+\createmark{section}{right}{shownumber}{}{ \quad }
+\createplainmark{toc}{both}{\contentsname}
+\createplainmark{lof}{both}{\listfigurename}
+\createplainmark{lot}{both}{\listtablename}
+\createplainmark{bib}{both}{\bibname}
+\createplainmark{index}{both}{\indexname}
+\createplainmark{glossary}{both}{\glossaryname}
+}
+\makeatother                               %
+
+\makepagestyle{chap} % Make new chapter pagestyle
+
+\makeatletter
+\makeevenfoot{chap}{}{\small\bfseries\thepage}{} % Define new chapter pagestyle
+\makeoddfoot{chap}{}{\small\bfseries\thepage}{}  %
+\makeevenhead{chap}{\bfseries}{}{}   %
+\makeoddhead{chap}{}{}{}    %
+% \makeheadrule{chap}{\textwidth}{\normalrulethickness}
+\makeatother
+
+\nouppercaseheads
+\pagestyle{standard}               % Choosing pagestyle and chapter pagestyle
+\aliaspagestyle{chapter}{chap} %
+
+%%% TIKZ
+%%%------------------------------------------------------------------------------
+\usetikzlibrary{shapes.callouts}
+\tikzset{
+  level/.style   = { ultra thick, black },
+  connect/.style = { dashed, black },
+  notice/.style  = { draw, rectangle callout, callout relative pointer={#1} },
+  label/.style   = { text width=2cm }
+}
+%%% NEW COMMANDS
+%%%------------------------------------------------------------------------------
+
+\newcommand{\p}{\partial} %Partial
+% Or what ever you want
+
+%%% TABLE OF CONTENTS
+%%%------------------------------------------------------------------------------
+
+\maxtocdepth{subsection} % Only parts, chapters and sections in the table of contents
+\settocdepth{subsection}
+
+\AtEndDocument{\addtocontents{toc}{\par}} % Add a \par to the end of the TOC
+
+%%% INTERNAL HYPERLINKS
+%%%-------------------------------------------------------------------------------
+
+\usepackage{hyperref}   % Internal hyperlinks
+\hypersetup{
+pdfborder={0 0 0},      % No borders around internal hyperlinks
+pdfauthor={John Martin Jr.} % author
+}
+\usepackage{memhfixc}   %
+\usepackage{textcomp}
+
+
+%%% THE DOCUMENT
+%%% Where all the important stuff is included!
+%%%-------------------------------------------------------------------------------
+
+\author{John Martin Jr.\\
+        \texttt{jdm2213@columbia.edu}}
+\title{\texttt{PDDLyte} Language Reference Manual}
+
+\begin{document}
+
+\frontmatter
+
+\maketitle
+\definecolor{code_gray}{gray}{0.92}
+% Listings -----------------------------------------------------------------------
+\lstset{
+  backgroundcolor=\color{code_gray},% choose the background color
+  basicstyle=\ttfamily,             % the size of the fonts that are used for the code
+  %breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  %breaklines=true,                 % sets automatic line breaking
+  %captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{black},        % comment style
+  %deletekeywords={...},            % if you want to delete keywords from the given language
+  %escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  %extendedchars=true,              % lets you use non-ASCII characters; does not work with UTF-8
+  frame=single,                     % adds a frame around the code
+  %keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  %keywordstyle=\color{orange},      % keyword style
+  language=Lisp,                    % the language of the code
+  %morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=none,                     % where to put the line-numbers; possible values are (none, left, right)
+  %numbersep=5pt,                   % how far the line-numbers are from the code
+  %numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},          % if not set, the frame-color may be changed on line-breaks within not-black text
+  showspaces=false,                 % show spaces everywhere adding particular underscores; overrides 'showstringspaces'
+  %showstringspaces=false,          % underline spaces within strings only
+  %showtabs=false,                  % show tabs within strings adding particular underscores
+  %stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  %stringstyle=\color{mymauve},     % string literal style
+  %tabsize=2,                       % sets default tabsize to 2 spaces
+  %title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+
+\clearpage
+
+\tableofcontents*
+\clearpage
+
+
+\chapter{Introduction}
+{\setlength{\parindent}{0cm}
+The \textsc{Pddlyte} language, whose name derives from the Planning Domain Definition Language (\textsc{Pddl})\cite{pddl98}, is a symbolic, specification language used to formulate and solve planning problems.\\
+ 
+Let's quickly move into an example to motivate further explanation. Now the simplest, logically-coherent \textsc{PDDLyte} program only translates input to output.\\
+
+}
+\begin{lstlisting}
+(define (domain square)
+        (:predicates (at ?what ?where))
+        (:action squat
+         :parameters  ()
+         :precondition()
+         :effect      ()
+        )
+)
+
+(define (problem simple)
+        (:domain square)
+        (:objects ant sq)
+        (:init (at ant sq))
+        (:goal (at ant sq))
+)
+        
+\end{lstlisting}
+
+\noindent From the program we can deduce there are two different definitions. One seems to describe a space of sorts. And the other definition relates to a problem. In essence, this is all a \textsc{Pddlyte} program is: two definitions. The \textit{domain definition} describes a planning environment. Whereas the \textit{problem definition} describes a plan configuration. It turns out that a domain and problem description, as we've formulated it, are all anyone needs to formulate a general planning problem! Plans are formulated with an initial state, a goal description, and a domain on which to plan over. Provided the problem can be solved, the solution can be represented as a sequence of actions, providing a map that leads from an initial state to a goal state(s).\\
+
+\noindent \textsc{Pddlyte} can describe much more interesting problems than what has been shown. After understanding the contents of this document, the reader should be able to recognize the \textsc{Pddlyte}'s expressive power. Solving classical planning problems will then become simple.
+
+\chapter{Lexical Conventions}
+{\setlength{\parindent}{0cm}
+In the most basic form, programs are comprised of two symbolic expressions. One is a domain definition; the other is a problem definition. Beyond symbolism, three atomic datatypes, white space, and comments compose programs.
+}
+
+\section{Tokens}
+\noindent There are three primary token classes: atoms, keywords, and separators. 
+
+\section{Symbolic Expressions}
+\noindent \textit{Symbolic expressions} are recursively-defined data types which can nest atoms and lists to an arbitrary depth -- succinctly referred to as \textit{s-expressions}. 
+\begin{bnf*}
+\bnfprod{s-expression}{\bnfpn{atom} \bnfsp \bnfor \bnfsp \bnfpn{list}}\\
+\bnfprod{atom}{\bnfes \bnfsp \bnfor \bnfsp \bnfpn{number} \bnfsp \bnfor \bnfsp \bnfpn{identifier}}\\
+\bnfprod{list}{\bnfts{(}\bnfsp \bnfts{)} \bnfsp \bnfor \bnfsp (\bnfpn{s-expression} \bnfts{$\cdot$} \bnfpn{list})}\\
+\end{bnf*}
+\noindent\textit{Note: the empty list is a valid symbolic expression.}\\
+
+\noindent S-expressions are comprised of atoms, symbolically-expressed dotted pairs\footnote{A dotted pair can be thought of as a construction of two units.}, and lists. 
+
+\section{Atoms}
+{\setlength{\parindent}{0cm}
+Atoms are empty, numeric, or symbolic.
+\begin{bnf*}
+\bnfprod{atom}{\bnfes \bnfsp \bnfor \bnfsp \bnfpn{number} \bnfsp \bnfor \bnfsp \bnfpn{symbol}}\\
+\bnfprod{number}{\bnfts{(} \bnfsp \bnfts{0} \bnfsk \bnfts{9} \bnfsp \bnfts{)$^+$}}\\
+\bnfprod{symbol}{\bnfts{(} \bnfsp \bnfts{a} \bnfsk \bnfts{z} \bnfsp \bnfor \bnfsp \bnfts{+} \bnfsp \bnfor \bnfsp \bnfts{-} \bnfsp \bnfor \bnfsp \bnfts{*} \bnfsp \bnfor \bnfsp \bnfts{/} \bnfsp \bnfor \bnfsp \bnfts{\_} \bnfsp \bnfor \bnfsp \bnfts{<} \bnfsp \bnfor \bnfsp \bnfts{>} \bnfsp \bnfor \bnfsp \bnfts{!} \bnfsp \bnfor \bnfsp \bnfts{?} \bnfsp \bnfor \bnfsp \bnfts{:} \bnfsp \bnfts{)}\bnfts{$^+$}}
+\end{bnf*}\\
+
+Figure 1. decomposes symbolic expressions to show their connection to atoms and lists.
+
+\begin{figure}[h!]
+\begin{center}
+\begin{tikzpicture}
+   % Draw all levels
+  \draw[level] (0,0) -- node[above] {S-expression} (2,0);
+
+  \draw[connect] (2,0)  -- (3,-2) (2,0) -- (3,2);%root con
+  \draw[level]   (3,2)  -- node[above] {Atom} (5,2);
+  \draw[level]   (3,-2) -- node[above] {List} (5,-2);
+
+  \draw[connect] (5,2)    -- (6,3) (5,2) -- (6,1);%atom con
+  \draw[connect] (5,-2)   -- (6,-1) (5,-2) -- (6,-3);%list con
+  \draw[level]   (6,3)  -- node[above] {Number} (8,3);
+  \draw[level]   (6,1)  -- node[above] {Symbol} (8,1);
+  \draw[level]   (6,-1) -- node[above] {Empty list} (8,-1);
+  \draw[level]   (6,-3) -- node[above] {Dotted pair} (8,-3);
+
+\end{tikzpicture}
+\caption{Decomposition of symbolic expressions\cite{lisp_phw}}
+\end{center}
+\end{figure}
+
+\section{Comments}
+Comments begin with a semicolon (\texttt{;}) and terminate with the line it occupies. Furthermore, they do not nest and may not be composed within other comments. Words beyond the semi-colon, to the end of the line are invisible to evaluation.
+\begin{bnf*}
+\bnfprod{comment}{ \bnfts{;}}
+\end{bnf*}
+
+
+\section{Whitespace}
+Whitespace consists of any sequence of blank, tab, or newline characters.
+
+
+\chapter{Symbols}
+Symbolic atoms are strings of alphanumeric characters used to label the various objects in a planning problem. \textit{Symbol} is a colloquialism for \textit{symbolic atom}.
+
+\section{Variables}
+Variables label a symbol's spot in memory. These are immutable unless prefixed with question marks.
+\begin{bnf*}
+\bnfprod{variable}{ \bnfts{?}\bnfpn{symbol}}
+\end{bnf*}
+
+\section{Keywords}
+Any symbol prefixed with a colon is a keyword. 
+\begin{bnf*}
+\bnfprod{keyword}{ \bnfts{:}\bnfpn{symbol}}
+\end{bnf*}
+
+\section{Separators}
+Separators serve to distinguish different data types. Parentheses mark the boundaries of lists. While spaces separate data within a list.
+\begin{bnf*}
+\bnfprod{separator}{ \bnfts{(} \bnfsp \bnfor \bnfsp \bnfts{)} \bnfsp \bnfor \bnfts{\textvisiblespace}}
+\end{bnf*}
+
+
+\section{Procedures}
+Symbols are used to label procedures and their parameters. 
+\begin{bnf*}
+\bnfprod{procedure}{ \bnfts{(}\bnfpn{symbol} \bnfsp \bnfpn{list} \bnfsp \bnfpn{list}\bnfts{$^+$} \bnfsp \bnfts{)}}
+\end{bnf*}
+Procedures are fully explained in the next section.
+\section{Bindings}
+Variable bindings are not supported outside plan specifications and procedures. 
+
+
+\chapter{S-expressions}
+
+\textsc{Pddlyte} derives enormous representational power from symbolic expressions. S-expressions represent both procedures and data. This implies that, in principle, \textsc{Pddlyte} programs can be used as data and even generated as output!\\
+
+\section{Procedures Revisited}
+Procedures consist of a name, parameter list, and body. \textit{Names} are symbols. \textit{Parameters} are variables, bound and assigned upon procedure entry. The \textit{body} of a procedure consists of the forms that are evaluated when the procedure is used. 
+
+
+
+
+Processing is identical to \textsc{Lisp}:
+\begin{itemize}
+\item{\textit{Bind} parameters\footnote{Binding is considered the process of reserving memory for a symbol.}}
+\item{\textit{Assign} parameters upon entry to a procedure\footnote{Assignment is considered the process of storing a value, for a specified binding, in memory.}}
+\item{\textit{Evaluate} the body with the parameters and return the result\footnote{Evaluation, a nebulous term, here, is considered a cascading process of assignment value recovery.}}
+\item{Discard the argument binding}
+\end{itemize}
+
+All procedures are evaluated as symbolic expressions; so there's no precedence nor associativity to consider.
+
+\subsection{Basic Procedures}
+Several basic procedures are included with \textsc{Pddlyte}. \\
+
+\textbf{\small Conjunction} --- Logical conjunctions are formed with the \texttt{and} predicate: 
+\begin{bnf*}
+\bnfprod{conjunction}{ \bnfts{(}\bnfts{and} \bnfsp \bnfpn{list} \bnfsp \bnfts{)}}
+\end{bnf*}
+
+
+\textbf{\small Disjunction} --- Logical disjunctions are formed with the \texttt{or} predicate:
+
+\begin{bnf*}
+\bnfprod{disjunction}{ \bnfts{(}\bnfts{or} \bnfsp \bnfpn{list} \bnfsp \bnfts{)}}
+\end{bnf*}
+
+\textbf{\small Negation} --- A logical conjunction is inverted with the \texttt{not} predicate:
+\begin{bnf*}
+\bnfprod{negation}{ \bnfts{(}\bnfts{not} \bnfsp \bnfpn{list} \bnfsp \bnfts{)}}
+\end{bnf*}
+The function returns \texttt{T} if its argument is nil, otherwise \texttt{nil}.\\
+
+\subsection{Planning Procedures}
+Other procedures are used to specify planning problems.\\
+
+\textbf{\small Procedure definition} --- planning procedures are created with the \texttt{define} predicate:
+\begin{bnf*}
+\bnfprod{definition}{ \bnfts{(}\bnfts{define} \bnfsp \bnfts{(}\bnfpn{symbol}\bnfsp \bnfpn{symbol}\bnfts{)} \bnfsp \bnfpn{list} \bnfsp \bnfpn{list}\bnfts{$^+$} \bnfsp \bnfts{)}}
+\end{bnf*}
+This shares semantics with \textsc{Lisp}, but is restricted to support the only two planning procedures of \textsc{Pddlyte}.\\
+
+\textbf{\small Domain} ---
+The domain procedure establishes variable bindings and transition operators of the planning environment. Only a single domain procedure is permitted per file. 
+\begin{bnf*}
+\bnfprod{domain}{ \bnfts{(domain}\bnfsp\bnfpn{symbol}\bnfts{)} \bnfsp \bnfpn{type} \bnfsp \bnfpn{action} \bnfsp \bnfpn{predicate}}
+\end{bnf*}
+The expansion of this grammar is deferred to the next section.\\
+
+\textbf{\small Problems} ---
+The problem procedure establishes variable bindings that configure the planning graph.
+\begin{bnf*}
+\bnfprod{problem}{ \bnfts{(problem}\bnfsp\bnfpn{symbol}\bnfts{)} \bnfsp \bnfpn{domain name} \bnfsp \bnfpn{object} \bnfsp \bnfpn{initial state} \bnfsp \bnfpn{goal}}\\
+\bnfprod{domain name}{\bnfts{(}\bnfts{:domain}\bnfsp\bnfpn{symbol}\bnfts{)}}
+\end{bnf*}
+The remaining grammar has been deferred to the next section.\\
+
+\section{Planning S-expressions}
+\textbf{\small Types} ---
+Types are symbols that specify objects of the domain. This attribute is an extension of PDDL, but will be inherently supported with PDDLyte.
+\begin{bnf*}
+\bnfprod{type}{\bnfts{(}\bnfts{:types} \bnfsp \bnfpn{symbol}\bnfts{$^+$}\bnfts{)}}\\
+\end{bnf*}
+
+\textbf{\small Actions} ---
+Actions are conditions which define system transitions. 
+\begin{bnf*}
+\bnfprod{action}{\bnfts{(}\bnfts{:action} \bnfsp \bnfpn{parameter} \bnfsp \bnfpn{pre-condition} \bnfsp \bnfpn{effect}\bnfts{)}}\\
+\bnfprod{parameter}{\bnfts{(:parameters} \bnfsp \bnfpn{symbol}\bnfts{$^+$} \bnfts{)}}\\
+\bnfprod{pre-condition}{\bnfts{(:precondition}\bnfsp \bnfpn{list}\bnfts{$^+$}\bnfts{)}}\\
+\bnfprod{effect}{\bnfts{(:effect}\bnfsp \bnfpn{list}\bnfts{$^+$}\bnfts{)}}
+\end{bnf*}
+\textit{Pre-conditions} are logical conjunctions that must be satisfied before transitions take place. \textit{Effects} are logical conjunctions which must be  satisfied and valid before the transition is completed. Actions with no pre-conditions are always valid. The parameters are those used in the conditions.\\
+
+\textbf{\small Predicates} ---
+Predicates define relationships between object variables. These can be static relations that hold from state to state or fluent relations. Each predicate is defined with a name symbol and one or more name-type pairs; where the object name is separated from the type with a dash:
+\begin{bnf*}
+\bnfprod{predicate}{\bnfts{(}\bnfts{:predicates} \bnfsp \bnfpn{list}\bnfts{$^+$}\bnfts{)}}
+\end{bnf*}
+
+An example predicate has been shown for clarity.
+
+\begin{lstlisting}
+(:predicates (pred ?<name> - <type>))
+\end{lstlisting}
+
+\textbf{\small Objects} --- Objects describe types that exist in a problem, but that are absent from the domain specification.
+\begin{bnf*}
+\bnfprod{object}{\bnfts{(}\bnfts{:objects} \bnfsp \bnfpn{list}\bnfts{$^*$}\bnfts{)}}
+\end{bnf*}
+\textit{Note: This s-expression is optional.}\\
+
+\textbf{\small Initial State} ---
+The initial state defines the conditions that are true in the system's starting configuration.
+\begin{bnf*}
+\bnfprod{initial state}{\bnfts{(}\bnfts{:init} \bnfsp \bnfpn{list}\bnfts{$^+$}\bnfts{)}}
+\end{bnf*}
+
+\textbf{\small Goal Description} ---
+The goal description, analogous to the initial state, describes the terminal conditions.
+\begin{bnf*}
+\bnfprod{goal}{\bnfts{(}\bnfts{:goal} \bnfsp \bnfpn{list}\bnfts{$^+$}\bnfts{)}}
+\end{bnf*}
+
+
+\backmatter
+
+
+
+
+
+%%% BIBLIOGRAPHY
+%%% -------------------------------------------------------------
+
+\bibliographystyle{plain}
+\bibliography{ref}
+
+\end{document}
