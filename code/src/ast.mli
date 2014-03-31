@@ -1,19 +1,21 @@
 (* the abstract syntax tree *)
 
-(* s-expressions are converted into the ast here *)
-
 (* atoms *)
 type sym = string
 
-
-(* expressions *)
+(* abstract syntax tree nodes *)
 type expr =
-  | Expr_unit
-  | Expr_int  of int
-  | Expr_sym  of sym
-  | Expr_define  of sym * expr
+  | Expr_unit                          (* () *) 
+  | Expr_int    of int                 (* 0-9 *)
+  | Expr_sym    of sym                 (* a-z *)
+  | Expr_lst  of expr list           (* ( ( 1 ) ( 2 ( 3 ) ) 4 ) *)
+  | Expr_apply of expr * expr list
+  | Expr_define of sym * expr          (* ( define (1) ( 2 3 4 ) 5 ) *)
+  | Expr_lambda of sym list * expr list (*  *)
 
-(* convert s-expression into ast expression *)
+(* convert s-expression into ast expression 
+val ast_of_sexpr : Sexpr.expr -> expr
+*)
 val ast_of_sexpr : Sexpr.expr -> expr
 
 (* Convert an AST expression into a string. *)
