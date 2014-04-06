@@ -1,65 +1,106 @@
 #
-# Makefile for pddlyte
+# Makefile for PDDLyte
 #
 
-# default target
-default: lexer_test parser_test ast_test
+# Default compilation target.
+default: lexer_test parser_test ast_test sast_test
 
-INTF = sexpr.cmi parser.cmi parser_utils.cmi lexer_utils.cmi ast.cmi
-OBJS = sexpr.cmo parser.cmo lexer.cmo parser_utils.cmo lexer_utils.cmo \
-       ast.cmo
+#
+# Variables.
+#
 
-# patterns
-%.ml : %.mll
-	ocamllex $<
+OCAMLLEX  = ocamllex
+OCAMLYACC = ocamlyacc
+OCAMLC    = ocamlc
 
-%.ml %.mli : %.mly
-	ocamlyacc $<
+INTERFACES = \
+    sexpr.cmi           \
+    parser.cmi          \
+    parser_utils.cmi    \
+    lexer_utils.cmi     \
+    ast.cmi		\
+    sast.cmi		
 
-%.cmo : %.ml %.cmi
-	ocamlc -c $<
+OBJS = \
+    sexpr.cmo           \
+    parser.cmo          \
+    lexer.cmo           \
+    parser_utils.cmo    \
+    lexer_utils.cmo     \
+    ast.cmo		\
+    sast.cmo		
 
-%.cmi : %.mli
-	ocamlc -c $<
+#
+# Patterns.
+#
+
+%.ml: %.mll
+	$(OCAMLLEX) $<
+
+%.ml %.mli: %.mly
+	$(OCAMLYACC) $<
+
+%.cmo: %.ml %.cmi
+	$(OCAMLC) -c $<
+
+%.cmi: %.mli
+	$(OCAMLC) -c $<
 
 
-# compilation
-lexer_test : $(INTF) $(OBJS) lexer_test.cmo
+#
+# Compilation targets.
+#
+
+lexer_test: $(INTERFACES) $(OBJS) lexer_test.cmo
 	ocamlc -o $@ $(OBJS) lexer_test.cmo
 
-parser_test : $(INTF) $(OBJS) parser_test.cmo
+parser_test: $(INTERFACES) $(OBJS) parser_test.cmo
 	ocamlc -o $@ $(OBJS) parser_test.cmo
 
-ast_test : $(INTF) $(OBJS) ast_test.cmo
+ast_test: $(INTERFACES) $(OBJS) ast_test.cmo
 	ocamlc -o $@ $(OBJS) ast_test.cmo
 
-lexer.cmo : lexer.ml
-	ocamlc -c $<
+sast_test: $(INTERFACES) $(OBJS) sast_test.cmo
+	ocamlc -o $@ $(OBJS) sast_test.cmo
 
-lexer_test.cmo : lexer_test.ml
-	ocamlc -c $<
+lexer.cmo: lexer.ml
+	$(OCAMLC) -c $<
 
-parser_test.cmo : parser_test.ml
-	ocamlc -c $<
+lexer_test.cmo: lexer_test.ml
+	$(OCAMLC) -c $<
 
-ast_test.cmo : ast_test.ml
-	ocamlc -c $<
+parser_test.cmo: parser_test.ml
+	$(OCAMLC) -c $<
+
+ast_test.cmo: ast_test.ml
+	$(OCAMLC) -c $<
+
+sast_test.cmo: sast_test.ml
+	$(OCAMLC) -c $<
+
+#
+# Tests.
+#
+
+test_lexer: lexer_test
+	./lexer_test tokens.bs
+
+test_parser: parser_test
+	./parser_test craptest
+
+test_ast: ast_test
+	./ast_test craptest
+
+test_sast: sast_test
+	./sast_test craptest
 
 
-# tests
-test_lexer : lexer_test
-	lexer_test test/lex/lex_test_prog
+#
+# Cleanup.
+#
 
-test_parser : parser_test
-	parser_test test/parse/parse_test_prog
-
-test_ast : ast_test
-	ast_test factorial.bs
-
-# cleanup
-.PHONY : clean
-clean :
-	rm -f pddlyte lexer.ml parser.ml parser.mli lexer_test parser_test \
-	ast_test \
-	*.cmo *.cmi *.out *.diff *.mll~ *.mli~ *.ml~ *.mly~
-
+clean:
+	rm -f *.cmo *.cmi lexer.ml parser.ml	\
+	*.mll~ *.mly~ *.ml~ *.mli~ *.c~ *.out	\
+	lexer_test parser_test ast_test		\
+	sast_test master craptest~		\
