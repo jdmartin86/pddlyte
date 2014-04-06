@@ -70,22 +70,6 @@ let rec ast_of_sexpr sx = match sx with
       | _ -> failwith "list of list"
     )
 
-     (* | Expr_lst( List.map ast_of_sexpr l ) *)
-(*   
-     ( match l with
-     |	[] -> ast_of_sexpr (Expr_atom (Atom_unit))
-     | h :: t ->  as lst -> Expr_lst( List.map ast_of_sexpr lst )
-     )
-
-*)
-(*
-  | Expr_list l -> Expr_lst(
-    let rec map f lst a =
-      match lst with
-	| [] -> a 
-	| h::t -> map f t (f h :: a)
-    in map (ast_of_sexpr) l [])
-*)
 let string_of_ast ast =
    let sprintf  = Printf.sprintf in  (* to make the code cleaner *)
    let spaces n = String.make n ' ' in

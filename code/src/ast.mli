@@ -25,14 +25,9 @@ val ast_of_sexpr : Sexpr.expr -> expr
 *)
 val ast_of_sexpr : Sexpr.expr -> expr
 
-(* Convert an AST expression into a string. *)
+(* Convert an ast expression into a string. *)
 val string_of_ast : expr -> string
 
-(* Test the conversion from S-expressions to AST expressions 
-   by reading in a file, converting all S-expressions
-   in the file into the internal representation of S-expressions,
-   converting each of those S-expressions into AST expressions,
-   and pretty-printing them. 
-*)
+(* Test ast *)
 val ast_test : in_channel -> unit
 
