@@ -6,46 +6,46 @@
 
 open Sexpr
 
-(* procedures ... not really though*)
-type proc = And | Not 
-
 (* symbols *)
 type sym = string
 
-(* think of better name later *)
 type atom =
   | Atom_var of sym (* ?symbol *)
   | Atom_gnd of sym (* symbol *)
 
-type conjunction = 
-  | Conj_var of sym * atom list (* (conjname vatom v/gatom?) *)
-  | Conj_gnd of sym * atom list (* (conjname gatom gatom?) *)
-  
+type predicate = 
+  | Pred_var of sym * atom list (* (predname vatom v/gatom?) *)
+  | Pred_gnd of sym * atom list (* (predname gatom gatom?) *)
+
+type conjunction =
+  | Conj_and of conjunction list 
+  | Conj_neg of predicate 
+  | Conj_pos of predicate
+
+type action =
+{
+  name         : sym;
+  parameters   : atom list;
+  precondition : conjunction; 
+  effect       : conjunction 
+}
+
 type expr =
-  | Expr_unit (* () *)                          
-  | Expr_sym        of sym (* identifiers *)
   | Expr_domain     of sym * expr list (* (define ( domain pman ) ... )*)
   | Expr_problem    of sym * expr list (* (define ( problem prob ) ...)*)
-  | Expr_predicates of conjunction list  (* :predicates body *)
-  | Expr_action     of action list (* :action ... *)
-  | Expr_objects    of sym list (* :objects body *)
-  | Expr_init       of conjunction list (* :init body *)
-  | Expr_goal       of conjunction list (* :goal body *)
-  | Expr_proc       of proc * conjunction list (* and, not *)
-
-and action =
-{
-  name          : sym; (* action name *)
-  parameters    : atom list;
-  preconditions : expr list; (* mix of procedures and conjunctions *)
-  effects       : expr list (* mix of procedures and conjunctions *)
-}
+  | Expr_predicates of predicate list  (* :predicates body *)
+  | Expr_action     of action list     (* :action ... *)
+  | Expr_init       of conjunction     (* :init body *)
+  | Expr_goal       of conjunction     (* :goal body *)
+  | Expr_objects    of atom list       (* :objects body *)
+  | Expr_sym        of sym             (* identifiers *)
+  | Expr_unit                          (* () *)                          
 
 type program = expr list (* domain and problem *)
 
 let sym_of_atom a = 
   ( match a with 
-    | Atom_unit -> "" 
+    | Atom_unit -> "" (* shouldn't be used *)
     | Atom_sym s -> s
   ) 
 
@@ -67,49 +67,22 @@ let astatom_of_atomsym atom_sym =
     | _ -> failwith "only accepts type atom sym"
   )
 
-
-(* sexpr.atom list -> conjunction *)
-let conj_of_expr expr = 
-  ( match expr with
-    | []    -> failwith "conjugates must be non-empty"
-    | [n]   -> failwith "conjugates must have non-empty params"
-    | _ -> 
-      let len = List.length expr in
-      ( match len with 
-	| 3 -> 
-	  let p1 = List.nth expr 1 in 
-	  let a1 = astatom_of_atomsym p1 in
-	  ( match a1 with 
-	    | Atom_var va ->
-	      let p2 = List.nth expr 2 in
-	      let a2 = astatom_of_atomsym p2 in
-	      Conj_var( sym_of_atom (List.nth expr 0) , [a1;a2] )
-	    | Atom_gnd ga -> 
-	      let p2 = List.nth expr 2 in 
-	      let a2 = astatom_of_atomsym p2 in
-	      ( match a2 with
-		| Atom_var va -> 
-		  Conj_var( sym_of_atom (List.nth expr 0) , [a1;a2] )
-		| _ -> 
-		  Conj_gnd( sym_of_atom (List.nth expr 0) , [a1;a2] )
-	      )
-	  )
-	| 2 ->
-	  let p1 = List.nth expr 1 in 
-	  let a1 = astatom_of_atomsym p1 in
-	  ( match a1 with 
-	    | Atom_var va -> 
-	      Conj_var( sym_of_atom (List.nth expr 0) , [a1] )
-	    | Atom_gnd ga -> 
-	      Conj_gnd( sym_of_atom (List.nth expr 0) , [a1] )
-	  )
-	| _ -> failwith "conjunctions may not have more than two params"
-      )   
+(* sexpr.expr -> ast.atom *)
+let astatom_of_sexpr sx =
+  ( match sx with
+    | Expr_atom ( Atom_sym s ) -> 
+      let prefix = String.get s 0 in
+      ( match prefix with
+	| '?' -> Atom_var s
+	| _ -> Atom_gnd s
+      )
+    | _ -> failwith "only accepts type atom sym"
   )
 
 
 (* this will need to be recursive for nested calls *)
-let conj_of_sexpr sx = 
+(* sexpr.expr -> ast.predicate *)  
+let pred_of_sexpr sx = 
 ( match sx with 
   | Expr_list l ->
     ( match l with
@@ -118,26 +91,115 @@ let conj_of_sexpr sx =
 	    a2 = astatom_of_atomsym p2 in
 	( match a1 with 
 	  | Atom_var _ -> 
-	    Conj_var( name , [a1 ; a2] )
+	    Pred_var( name , [a1 ; a2] )
 	  | Atom_gnd _ ->
 	    ( match a2 with
 	      | Atom_var _ -> 
-		Conj_var( name , [a1 ; a2] )
+		Pred_var( name , [a1 ; a2] )
 	      | Atom_gnd _ -> 
-		Conj_gnd( name , [a1 ; a2] )
+		Pred_gnd( name , [a1 ; a2] )
 	    )
 	)
       | [ Expr_atom ( Atom_sym name ) ; Expr_atom p1 ] ->
 	let a1 = astatom_of_atomsym p1 in
 	( match a1 with 
 	  | Atom_var _ -> 
-	    Conj_var( name , [a1] )
+	    Pred_var( name , [a1] )
 	  | _ ->
-	    Conj_gnd( name , [a1] )
+	    Pred_gnd( name , [a1] )
 	) 
     )
   | _ -> failwith "unrecognized conjunction structure"
 )
+
+(* sexpr.expr list -> atom list *)
+let params_of_sexpr sx = 
+  ( match sx with 
+    | Expr_atom _ :: _ ->
+      List.map astatom_of_sexpr sx
+    | _ -> failwith "syntax error: unrecognized parameter"
+  )
+
+let rec conj_of_sexpr sx = 
+  ( match sx with 
+    | Expr_list l ->
+      ( match l with
+	| Expr_atom ( Atom_sym "and" ) :: body -> (* list of conjs *)
+	  Conj_and ( List.map conj_of_sexpr body )
+	| [ Expr_atom ( Atom_sym "not" ) ; p1 ] -> 
+	  Conj_neg ( pred_of_sexpr p1 ) (*TODO: think about nesting ands *)
+	| [ Expr_atom ( Atom_sym name ) ; Expr_atom p1 ; Expr_atom p2 ] ->
+	  let a1 = astatom_of_atomsym p1 and 
+	      a2 = astatom_of_atomsym p2 in
+	  ( match a1 with 
+	    | Atom_var _ -> 
+	      Conj_pos(Pred_var( name , [a1 ; a2] ))
+	    | Atom_gnd _ ->
+	      ( match a2 with
+		| Atom_var _ -> 
+		  Conj_pos(Pred_var( name , [a1 ; a2] ))
+		| Atom_gnd _ -> 
+		  Conj_pos(Pred_gnd( name , [a1 ; a2] ))
+	      )
+	  )
+	| [ Expr_atom ( Atom_sym name ) ; Expr_atom p1 ] ->
+	  let a1 = astatom_of_atomsym p1 in
+	  ( match a1 with 
+	    | Atom_var _ -> 
+	      Conj_pos(Pred_var( name , [a1] ))
+	    | _ ->
+	      Conj_pos(Pred_gnd( name , [a1] ))
+	  ) 
+      )
+    | _ -> failwith "syntax error: unrecognized conjunction" 
+  )
+
+(* recursive type ... some day
+type conjunction =
+  | Conj_and of conjunction list 
+  | Conj_neg of conjunction 
+  | Conj_pos of conjunction
+  | Pred     of predicate
+ evaluates nested conjunction lists to preds 
+let rec resolve_conj pred =
+( match pred with 
+  | Conj_and ( c ) -> Conj_and ( List.map resolve_conj c )
+  | Conj_neg ( c ) -> Conj_neg ( resolve_conj c )
+  | Conj_pos ( c ) -> Conj_pos ( resolve_conj c )
+  | Pred p -> Pred p  
+) 
+*)
+
+(* sexpr.expr -> ast.action *)
+(* probably the most hacked code i've ever written *)
+let action_of_sexpr sx =
+  ( match sx with
+    | Expr_atom ( Atom_sym ":action" ) :: body ->
+      failwith "progress"
+	( match body with
+	  | Expr_atom ( Atom_sym name ) :: body -> (* action name *)
+	    ( match body with  
+	      | Expr_atom ( Atom_sym ":parameters" ) :: 
+		  Expr_list params :: body ->
+		( match body with 
+		  | Expr_atom ( Atom_sym ":precondition" ) ::
+		      Expr_list precond :: body ->
+		    ( match body with 
+		      | Expr_atom ( Atom_sym ":effect" ) :: 
+			  effect -> 
+			{ 
+			  name = name ;
+			  parameters = params_of_sexpr params;
+			  precondition = conj_of_sexpr (Expr_list(precond));
+			  effect = conj_of_sexpr (Expr_list(effect))
+			}
+		      | _ -> failwith "syntax error: unrecognized action structure"
+		    )
+		)
+	    )
+	)
+  )
+
 (* tasks 
 - parse a domain and arbitrary list tail 
 - pattern match like i used to, then populate expressions on a 
@@ -174,7 +236,6 @@ find init prefix
    - process conjunctions the same as preconditions
 find goal prefix 
    - process conjunctions the same as preconditions
-
 *)
 
 let rec ast_of_sexpr sx =  
@@ -184,9 +245,10 @@ let rec ast_of_sexpr sx =
       ( match l with
         (* predicates *)
 	| Expr_atom ( Atom_sym ":predicates" ) :: body ->
-	  Expr_predicates( List.map conj_of_sexpr body )
-	| Expr_atom ( Atom_sym ":action" ) :: body ->
-	  failwith "progress"
+	  Expr_predicates( List.map pred_of_sexpr body )
+	| Expr_atom ( Atom_sym ":action" ) :: body -> 
+	  Expr_action( List.map action_of_sexpr 
+			 ([Expr_atom ( Atom_sym ":action" ) :: body]) )
 	| Expr_atom _ :: (* define *)
 	    Expr_list l :: 
 	    body -> (* body *)
@@ -233,7 +295,7 @@ let string_of_ast ast =
        | Expr_domain ( name , body ) -> 
 	 sprintf "%sDOMAIN[%s\n%s ]" 
            (spaces indent) name (string_of_exprs body)
-       | Expr_predicates( conjlist ) -> 
+       | Expr_predicates( predlist ) -> 
 	 sprintf "%sPREDICATES[ ]"
 	   ( spaces indent ) 
        | _ -> failwith "print not implemented yet"

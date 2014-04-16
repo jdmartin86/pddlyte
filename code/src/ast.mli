@@ -1,39 +1,39 @@
 (* the abstract syntax tree *)
 
-(* procedures ... not really though*)
-type proc = And | Not 
-
 (* symbols *)
 type sym = string
 
-(* think of better name later *)
 type atom =
   | Atom_var of sym (* ?symbol *)
   | Atom_gnd of sym (* symbol *)
 
-type conjunction = 
-  | Conj_var of sym * atom list (* (conjname vatom v/gatom?) *)
-  | Conj_gnd of sym * atom list (* (conjname gatom gatom?) *)
-  
+type predicate = 
+  | Pred_var of sym * atom list (* (predname vatom v/gatom?) *)
+  | Pred_gnd of sym * atom list (* (predname gatom gatom?) *)
+
+type conjunction =
+  | Conj_and of conjunction list 
+  | Conj_neg of predicate 
+  | Conj_pos of predicate
+
+type action =
+{
+  name         : sym;
+  parameters   : atom list;
+  precondition : conjunction; 
+  effect       : conjunction 
+}
+
 type expr =
-  | Expr_unit (* () *)                          
-  | Expr_sym        of sym (* identifiers *)
   | Expr_domain     of sym * expr list (* (define ( domain pman ) ... )*)
   | Expr_problem    of sym * expr list (* (define ( problem prob ) ...)*)
-  | Expr_predicates of conjunction list  (* :predicates body *)
-  | Expr_action     of action list (* :action ... *)
-  | Expr_objects    of sym list (* :objects body *)
-  | Expr_init       of conjunction list (* :init body *)
-  | Expr_goal       of conjunction list (* :goal body *)
-  | Expr_proc       of proc * conjunction list (* and, not *)
-
-and action =
-{
-  name          : sym; (* action name *)
-  parameters    : atom list;
-  preconditions : expr list; (* mix of procedures and conjunctions *)
-  effects       : expr list (* mix of procedures and conjunctions *)
-}
+  | Expr_predicates of predicate list  (* :predicates body *)
+  | Expr_action     of action list     (* :action ... *)
+  | Expr_init       of conjunction     (* :init body *)
+  | Expr_goal       of conjunction     (* :goal body *)
+  | Expr_objects    of atom list       (* :objects body *)
+  | Expr_sym        of sym             (* identifiers *)
+  | Expr_unit                          (* () *)                          
 
 type program = expr list (* domain and problem *)
 
