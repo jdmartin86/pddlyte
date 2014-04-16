@@ -28,12 +28,12 @@ type expr =
   | Expr_domain     of sym * expr list (* (define ( domain pman ) ... )*)
   | Expr_problem    of sym * expr list (* (define ( problem prob ) ...)*)
   | Expr_predicates of predicate list  (* :predicates body *)
-  | Expr_action     of action list     (* :action ... *)
-  | Expr_init       of conjunction     (* :init body *)
-  | Expr_goal       of conjunction     (* :goal body *)
+  | Expr_init       of predicate list  (* :init body *)
+  | Expr_goal       of predicate list  (* :goal body *)
+  | Expr_action     of action          (* :action ... *)
   | Expr_objects    of atom list       (* :objects body *)
   | Expr_sym        of sym             (* identifiers *)
-  | Expr_unit                          (* () *)                          
+  | Expr_unit                          (* () *) 
 
 type program = expr list (* domain and problem *)
 
