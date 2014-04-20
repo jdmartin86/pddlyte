@@ -6,7 +6,7 @@
  *the parser will return None; hence the program returns option.
  */
 
-%{ (* header *) %}
+%{ open Sexpr %}
 
 /* token declarations */
 %token TOK_LPAR TOK_RPAR
@@ -31,19 +31,19 @@
 
 parse:
 /* an s-expression, or none if eof is encountered*/
- | TOK_EOF	 { None }
- | sexpr 	 { Some $1 }
+ | TOK_EOF	{ None    }
+ | sexpr 	{ Some $1 }
 
 sexpr:
 /* an s-expresion, an atom or list of s-expressions */
- | atom		{ Expr_atom($1) }
- | slist	{ Expr_list($1) }
+ | atom		{ Expr_atom $1 }
+ | slist	{ Expr_list $1 }
 
 atom:
 /* an atom, which can be a unit, int or string. */
- | TOK_UNIT	{ Atom_unit	}
- | TOK_INT	{ Atom_int ($1) }
- | TOK_SYM	{ Atom_sym ($1) }
+ | TOK_UNIT	{ Atom_unit    }
+ | TOK_INT	{ Atom_int  $1 }
+ | TOK_SYM	{ Atom_sym  $1 }
 
 slist:
 /* a list of s-expressions, with parentheses */
