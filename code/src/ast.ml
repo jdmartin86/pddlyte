@@ -12,15 +12,18 @@ type sym = string
 type atom =
   | Atom_var of sym (* ?symbol *)
   | Atom_gnd of sym (* symbol *)
+  | Atom_nil
 
 type predicate = 
   | Pred_var of sym * atom list (* (predname vatom v/gatom?) *)
   | Pred_gnd of sym * atom list (* (predname gatom gatom?) *)
+  | Pred_nil
 
 type conjunction =
   | Conj_and of conjunction list 
   | Conj_neg of predicate 
   | Conj_pos of predicate
+  | Conj_nil
 
 type action =
 {
@@ -211,9 +214,8 @@ let rec ast_of_sexpr sx =
 	  Expr_init( List.map pred_of_sexpr body )
 	| Expr_atom ( Atom_sym ":goal" ) :: body -> 
 	  Expr_goal( List.map pred_of_sexpr body )
-	| Expr_atom _ :: (* define *)
-	    Expr_list l :: 
-	    body -> (* body *)
+	| Expr_atom ( Atom_sym "define" ) ::
+	    Expr_list l :: body -> (* body *)
 	  ( match l with 
 	    | [Expr_atom ( Atom_sym "domain" ) ; 
 	       Expr_atom ( Atom_sym name )] ->

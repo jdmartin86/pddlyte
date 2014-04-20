@@ -6,15 +6,18 @@ type sym = string
 type atom =
   | Atom_var of sym (* ?symbol *)
   | Atom_gnd of sym (* symbol *)
+  | Atom_nil
 
 type predicate = 
   | Pred_var of sym * atom list (* (predname vatom v/gatom?) *)
   | Pred_gnd of sym * atom list (* (predname gatom gatom?) *)
+  | Pred_nil
 
 type conjunction =
   | Conj_and of conjunction list 
   | Conj_neg of predicate 
   | Conj_pos of predicate
+  | Conj_nil
 
 type action =
 {
@@ -33,7 +36,7 @@ type expr =
   | Expr_action     of action          (* :action ... *)
   | Expr_objects    of atom list       (* :objects body *)
   | Expr_sym        of sym             (* identifiers *)
-  | Expr_unit                          (* () *) 
+  | Expr_unit                          (* () *)                          
 
 type program = expr list (* domain and problem *)
 
