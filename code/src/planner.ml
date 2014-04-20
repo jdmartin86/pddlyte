@@ -25,6 +25,15 @@ let ppred_of_conj c =
 )
 
 (* ast.action -> ast.predicate list *)
+let effect_of_act a =
+  let effect = a.effect in
+( match effect with 
+  | Conj_and c -> List.map pred_of_conj c
+  | Conj_pos c | Conj_neg c -> [c]
+  | Conj_nil -> []
+)
+
+(* ast.action -> ast.predicate list *)
 let  ppreds_of_act act = 
   let precond = act.precondition in
   ( match precond with
@@ -33,9 +42,19 @@ let  ppreds_of_act act =
     | _ -> []
   )
 
-(* preconds -> ppreds *)
-let partition_preds p = List.partition 
-  ( fun x -> match x with | Conj_pos _ -> true | _ -> false ) p
+(* preconds -> pred *)
+let partition_conj_to_pred p = 
+  ( match p with 
+    | Conj_and c -> List.partition 
+      ( fun x -> match x with | Conj_pos _ -> true | _ -> false ) c
+    | Conj_pos c -> ( [Conj_pos c] , []  )
+    | Conj_neg c -> ( []  , [Conj_neg c] )
+    | Conj_nil   -> ( []  , []  )
+  )
+
+(* preconds -> preds *)
+let partition_pred p = List.partition 
+      ( fun x -> match x with | Pred_pos _ -> true | _ -> false ) p
 
 (* ast.predicate -> ast.sym *)
 let predname_of_pred p =
@@ -156,11 +175,6 @@ let bindings_valid env1 env2 =
  *         env: a parameter substitution -- baby symbol table
  *           s: state to apply action
  *)
-(*
-let ( pp , np ) = partition_preds preds in
-  let  pp = List.map pred_of_conj pp    (* ast.conj -> ast.predicate *)
-  and  np = List.map pred_of_conj np in (* ast.conj -> ast.predicate *)
-*)
 let rec applicable_actions acc act ( pp , np ) env s  =
   ( match pp with
     | [] -> 
@@ -179,7 +193,88 @@ let rec applicable_actions acc act ( pp , np ) env s  =
 	    else 
 	      loop t
 	) in loop sps
+  )
+
+(* fetch action list from symbol table *)
+let actions_of_env env = failwith "not implemented"
+
+(* 'a list -> 'a list -> bool *)
+let goal_test s1 s2 = 
+  let s12 = intersect s1 s2 in
+  ( match s12 with
+    | [] -> true
+    | _ -> false
   ) 
+
+(* loop over all operators and accumulate applicable ops *)
+let app_ops s ops = 
+  let rec loop acc ops =
+    ( match ops with 
+      | [] -> acc 
+      | op::t -> 
+	let ( pp , np ) = partition_preds op.precondition
+	and env = Atomhash.create 10
+	and ao = applicable_actions [] op ( pp , np ) env s
+	in loop ( ao::acc ) t
+    )
+
+(* 'a -> 'a list -> 'a list *)
+let remove_pred l p =
+  let rec loop acc l =
+    ( match l with
+      | [] -> acc
+      | h::t -> 
+	if h = p then loop acc t
+	else loop (h::acc) t
+    )
+  in loop [] l
+
+(* gets grounded effect of a grounded predicate *)
+let geff_of_pred env p =
+global symbol enviornment needs an action struct from that
+
+(* state, op -> state *)
+(* ast.predicate list -> ast.predicate -> ast.predicate list *)
+let succ s o env = (* o is a grounded pred list *)
+  let act = Atomhash.find env (predname_of_pred o) (* TODO: globalhash *)
+  and ( pos , neg ) = partition_preds act 
+  and ne = List.map pred_of_conj neg    (* pred list *)
+  and pe = List.map pred_of_conj pos in (* pred list *)
+  let rec loop s ne =
+    ( match ne with
+      | [] -> 
+	let rec iloop s pe = 
+	  ( match pe with
+	    | [] -> s
+	    | h::t -> iloop (h::s) t
+	  )
+	in iloop s pe
+      | h::t -> loop (remove_pred s h) t 
+    )
+  in loop s ne
+
+(* 
+ * - how to handle cycling 
+ * - how to handle deadends -- backtrack to op choice
+ * - how to handle multiple goal states
+ * - how to handle complimentary effects 
+ *)
+let fsearch env = 
+  let ops = actions_of_env env 
+  and s0 = init_of_env env 
+  and g = goal_of_env env in 
+  let rec loop plan s ops =
+    if ( goal_test s g ) then plan
+    else 
+      let app = app_ops s ops in (* set of all app ops in s *)
+      ( match app with
+	| [] -> failwith "no applicable operators"
+	| o::t ->             (* choose applicable operator *)
+	  let s = succ s o in (* TODO: transistion to next state *)
+	  loop (o::plan) s t  (* plan from there *)
+      )
+  in loop [] s0
+ 
 (*
 (* successors *)
 let rec successors n = function
@@ -225,7 +320,7 @@ let rec dfs actions visited = function
       return no solution
 *)
 
-let plan_of_ast = failwith "not implemented yet"
+let plan_of_ast = 
 
 let string_of_plan ast = failwith "not implemented yet"
 
