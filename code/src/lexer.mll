@@ -6,7 +6,7 @@
 { open Parser }
 
 let wspc = [' ' '\t' '\n']
-let chrs = ['a'-'z' '+' '-' '*' '/' '=' '<' '>' '!' ':' '_']
+let chrs = ['A'-'Z' 'a'-'z' '+' '-' '*' '/' '=' '<' '>' '!' ':' '_' '?']
 let digt = ['0'-'9']
 let symb = (chrs | digt)+
 
@@ -16,8 +16,8 @@ rule token = parse
   | '('	       		{ TOK_LPAR }
   | ')'			{ TOK_RPAR }
   | "NILL"         	{ TOK_UNIT }
-  | symb    as sm  	{ TOK_SYM(sm) }
   | (digt)+ as nm	{ TOK_INT(int_of_string nm)}
+  | symb    as sm  	{ TOK_SYM(sm) }
   | eof	       		{ TOK_EOF }
   | _ as char { raise (Failure("Illegal character " ^ Char.escaped char)) }
   and comment = parse
