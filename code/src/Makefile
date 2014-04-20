@@ -3,7 +3,7 @@
 #
 
 # Default compilation target.
-default: lexer_test parser_test ast_test sast_test
+default: lexer_test parser_test ast_test planner_test #sast_test
 
 #
 # Variables.
@@ -13,22 +13,25 @@ OCAMLLEX  = ocamllex
 OCAMLYACC = ocamlyacc
 OCAMLC    = ocamlc
 
-INTERFACES = \
+INTERFACES =		\
     sexpr.cmi           \
     parser.cmi          \
     parser_utils.cmi    \
     lexer_utils.cmi     \
     ast.cmi		\
-    sast.cmi		
+    planner.cmi		\
+   # sast.cmi		
 
-OBJS = \
+OBJS =                  \
     sexpr.cmo           \
     parser.cmo          \
     lexer.cmo           \
     parser_utils.cmo    \
     lexer_utils.cmo     \
     ast.cmo		\
-    sast.cmo		
+    planner.cmo		\
+
+#    sast.cmo		
 
 #
 # Patterns.
@@ -45,8 +48,8 @@ OBJS = \
 
 %.cmi: %.mli
 	$(OCAMLC) -c $<
-
-
+%.cma: %ml
+	$(OCAMLC) -c $<
 #
 # Compilation targets.
 #
@@ -60,8 +63,11 @@ parser_test: $(INTERFACES) $(OBJS) parser_test.cmo
 ast_test: $(INTERFACES) $(OBJS) ast_test.cmo
 	ocamlc -o $@ $(OBJS) ast_test.cmo
 
-sast_test: $(INTERFACES) $(OBJS) sast_test.cmo
-	ocamlc -o $@ $(OBJS) sast_test.cmo
+#sast_test: $(INTERFACES) $(OBJS) sast_test.cmo
+#	ocamlc -o $@ $(OBJS) sast_test.cmo
+
+planner_test: $(INTERFACES) $(OBJS) planner_test.cmo
+	ocamlc -o $@ $(OBJS) planner_test.cmo
 
 lexer.cmo: lexer.ml
 	$(OCAMLC) -c $<
@@ -75,7 +81,10 @@ parser_test.cmo: parser_test.ml
 ast_test.cmo: ast_test.ml
 	$(OCAMLC) -c $<
 
-sast_test.cmo: sast_test.ml
+#sast_test.cmo: sast_test.ml
+#	$(OCAMLC) -c $<
+
+planner_test.cmo: planner_test.ml
 	$(OCAMLC) -c $<
 
 #
@@ -91,9 +100,11 @@ test_parser: parser_test
 test_ast: ast_test
 	./ast_test craptest
 
-test_sast: sast_test
-	./sast_test craptest
+#test_sast: sast_test
+#	./sast_test craptest
 
+test_planner: planner_test
+	./planner_test craptest
 
 #
 # Cleanup.
