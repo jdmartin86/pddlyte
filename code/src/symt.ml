@@ -1,6 +1,7 @@
 (* symbol table generation *)
 open Ast
 
+(* TODO: consolidate these *)
 exception Multiple_domains of string
 exception Unknown_sym of string
 exception Compile_error of string
@@ -56,7 +57,8 @@ let translate_variable_param env param =
     | Atom_var a -> (* split type from name *)
       add env (atom_type a) (atom_name a)
     | Atom_gnd a -> 
-      add env ":static" (atom_name a)
+      let error_msg = "parameters must be homogeneously variable" in
+      raise (Compile_error error_msg)
     | _ -> failwith "parameter improperly parsed"
   )
 
@@ -97,9 +99,49 @@ let translate_predicates env preds =
   let translate_pred = translate_predicate env in 
   List.iter translate_pred preds
 
-(* - add predicate name to global table 
-   - create symbol table for each predicate
+(* ensure the actions are type safe before passing to the planner
+   - planner gets an action list 
+     - applicable_actions uses preconditions
+     - successor function uses effects
+   - populate symbol with actions to type check 
+   ->> add action name to global symbol table
+     ->> make child symbol table for action parameters
+       ->> make child symbol table for predconditions
+       ->> make child symbol table for effects
 *)
+
+(* do i need another symbol table? or just to verify types and
+ add to plan table?
+
+- ensure the predicate name exits
+- ensure the parameter names are in the param list
+- if these pass, add them to the plan table
+*)
+let translate_preconds env precond =
+  ( match precond with 
+    | Conj_and conj -> failwith "progress"
+    | Conj_neg pred -> failwith "progress"
+    | Conj_pos pred -> failwith "progress"
+    | _ -> None
+  )
+
+(* TODO: this is quite ugly ... *)
+let translate_action env act = 
+  let { 
+        name = n ; 
+        parameters = params ; (* enforce variable homogeneity *)
+        precondition = precond ;
+        effect = eff 
+      } = act in
+  add env ":action" n ; (* add action name to global list *)
+  let parent = Some(env) in 
+  let param_env = make parent in (* make parameter table *)
+  translate_var_params param_env params ;
+  let param_parent = Some(param_env) in 
+  (* look for names and params in tables *)
+  translate_preconds param_parent precond ;
+  failwith "progress"
+  
 
 (* ast -> plan_table *)
 (* TODO: add type checking and semantic checks! *)
@@ -108,7 +150,8 @@ let rec translate_ast env ast =
   ( match ast with 
     | Expr_predicates( preds ) ->
       translate_predicates env preds
-    | Expr_action( act ) -> failwith "progress"
+    | Expr_action( act ) -> 
+      translate_action env act
     | Expr_objects( objs ) -> failwith "progress"
     | Expr_init( init ) -> failwith "progress"
     | Expr_goal( goal ) -> failwith "progress"
@@ -117,7 +160,6 @@ let rec translate_ast env ast =
     | Expr_problem( name , body ) -> 
       	add env ":problem" name ; List.iter recurse body
   )
-
 
 let plantable_of_ast ast = 
   let env = make None in  
