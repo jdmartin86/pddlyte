@@ -55,6 +55,8 @@ let translate_variable_param env param =
   ( match param with 
     | Atom_var a -> (* split type from name *)
       add env (atom_type a) (atom_name a)
+    | Atom_gnd a -> 
+      add env ":static" (atom_name a)
     | _ -> failwith "parameter improperly parsed"
   )
 
@@ -62,16 +64,32 @@ let translate_var_params env params =
   let translate_var_param = translate_variable_param env in
   List.iter translate_var_param params
 
+let translate_grounded_param env param =
+  ( match param with  (* seek type *)
+    | Atom_gnd a -> 
+      add env ":static" (atom_name a)
+    | _ -> failwith "parameter improperly parsed"
+  )
+
+let translate_gnd_params env params = 
+  let translate_gnd_param = translate_grounded_param env in
+  List.iter translate_gnd_param params
+
+(*TODO: describe restrictions on names *)
 let translate_predicate env pred =
     ( match pred with 
       | Pred_var( name , params ) -> 
-	add env "predicate" name ;
+	add env ":predicate" name ;
 	let parent = Some(env) in 
 	let new_env = make parent in
 	add new_env ":predicate" name ;
 	translate_var_params new_env params
       | Pred_gnd( name , params ) -> 
-	failwith "progress"
+	add env ":predicate" name ;
+	let parent = Some(env) in 
+	let new_env = make parent in 
+	add new_env ":predicate" name ;
+	translate_gnd_params new_env params
     )
 
 (* env -> pred list -> unit *)
@@ -95,9 +113,9 @@ let rec translate_ast env ast =
     | Expr_init( init ) -> failwith "progress"
     | Expr_goal( goal ) -> failwith "progress"
     | Expr_domain( name , body ) -> 
-	add env "domain" name ; List.iter recurse body
+	add env ":domain" name ; List.iter recurse body
     | Expr_problem( name , body ) -> 
-      	add env "problem" name ; List.iter recurse body
+      	add env ":problem" name ; List.iter recurse body
   )
 
 
