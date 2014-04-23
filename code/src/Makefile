@@ -4,7 +4,7 @@
 
 # Default compilation target.
 default: lexer_test parser_test ast_test \
-	 pddlyte  #planner_test 
+	 strips_test pddlyte  #planner_test 
 
 #
 # Variables.
@@ -64,6 +64,9 @@ parser_test: $(INTERFACES) $(OBJS) parser_test.cmo
 ast_test: $(INTERFACES) $(OBJS) ast_test.cmo
 	$(OCAMLC) -o $@ $(OBJS) ast_test.cmo
 
+strips_test: $(INTERFACES) $(OBJS) strips_test.cmo
+	$(OCAMLC) -o $@ $(OBJS) strips_test.cmo
+
 pddlyte: $(INTERFACES) $(OBJS) pddlyte.cmo
 	$(OCAMLC) -o $@ $(OBJS) pddlyte.cmo
 
@@ -77,6 +80,9 @@ parser_test.cmo: parser_test.ml
 	$(OCAMLC) -c $<
 
 ast_test.cmo: ast_test.ml
+	$(OCAMLC) -c $<
+
+strips_test.cmo: strips_test.ml
 	$(OCAMLC) -c $<
 
 pddlyte.cmo: pddlyte.ml
@@ -95,6 +101,9 @@ test_parser: parser_test
 test_ast: ast_test
 	./ast_test craptest
 
+test_strips: strips_test
+	./strips_test pacman.pdly
+
 test_pddlyte: pddlyte
 	./pddlyte craptest
 
@@ -106,4 +115,4 @@ clean:
 	rm -f *.cmo *.cmi lexer.ml parser.ml	\
 	*.mll~ *.mly~ *.ml~ *.mli~ *.c~ *.out	\
 	lexer_test parser_test ast_test		\
-	pddlyte master craptest~		\
+	strips_test pddlyte master craptest~		\
