@@ -4,7 +4,7 @@
 
 # Default compilation target.
 default: lexer_test parser_test ast_test \
-	 symt_test #planner_test #sast_test
+	 pddlyte  #planner_test 
 
 #
 # Variables.
@@ -13,6 +13,7 @@ default: lexer_test parser_test ast_test \
 OCAMLLEX  = ocamllex
 OCAMLYACC = ocamlyacc
 OCAMLC    = ocamlc
+OEXT	  = cmo
 
 INTERFACES =		\
     sexpr.cmi           \
@@ -20,21 +21,18 @@ INTERFACES =		\
     parser_utils.cmi    \
     lexer_utils.cmi     \
     ast.cmi		\
-    symt.cmi		\
+    strips.cmi		\
    # planner.cmi		\
-   # sast.cmi		
 
 OBJS =                  \
-    sexpr.cmo           \
-    parser.cmo          \
-    lexer.cmo           \
-    parser_utils.cmo    \
-    lexer_utils.cmo     \
-    ast.cmo		\
-    symt.cmo		\
-    #planner.cmo		\
-
-#    sast.cmo		
+    sexpr.$(OEXT)       \
+    parser.$(OEXT)      \
+    lexer.$(OEXT)       \
+    parser_utils.$(OEXT)\
+    lexer_utils.$(OEXT) \
+    ast.$(OEXT)		\
+    strips.$(OEXT)	\
+    #planner.cmo	\
 
 #
 # Patterns.
@@ -46,7 +44,7 @@ OBJS =                  \
 %.ml %.mli: %.mly
 	$(OCAMLYACC) $<
 
-%.cmo: %.ml %.cmi
+%.$(OEXT): %.ml %.cmi
 	$(OCAMLC) -c $<
 
 %.cmi: %.mli
@@ -58,22 +56,16 @@ OBJS =                  \
 #
 
 lexer_test: $(INTERFACES) $(OBJS) lexer_test.cmo
-	ocamlc -o $@ $(OBJS) lexer_test.cmo
+	$(OCAMLC) -o $@ $(OBJS) lexer_test.cmo
 
 parser_test: $(INTERFACES) $(OBJS) parser_test.cmo
-	ocamlc -o $@ $(OBJS) parser_test.cmo
+	$(OCAMLC) -o $@ $(OBJS) parser_test.cmo
 
 ast_test: $(INTERFACES) $(OBJS) ast_test.cmo
-	ocamlc -o $@ $(OBJS) ast_test.cmo
+	$(OCAMLC) -o $@ $(OBJS) ast_test.cmo
 
-symt_test: $(INTERFACES) $(OBJS) symt_test.cmo
-	ocamlc -o $@ $(OBJS) symt_test.cmo
-
-#sast_test: $(INTERFACES) $(OBJS) sast_test.cmo
-#	ocamlc -o $@ $(OBJS) sast_test.cmo
-
-#planner_test: $(INTERFACES) $(OBJS) planner_test.cmo
-#	ocamlc -o $@ $(OBJS) planner_test.cmo
+pddlyte: $(INTERFACES) $(OBJS) pddlyte.cmo
+	$(OCAMLC) -o $@ $(OBJS) pddlyte.cmo
 
 lexer.cmo: lexer.ml
 	$(OCAMLC) -c $<
@@ -87,14 +79,8 @@ parser_test.cmo: parser_test.ml
 ast_test.cmo: ast_test.ml
 	$(OCAMLC) -c $<
 
-symt_test.cmo: symt_test.ml
+pddlyte.cmo: pddlyte.ml
 	$(OCAMLC) -c $<
-
-#sast_test.cmo: sast_test.ml
-#	$(OCAMLC) -c $<
-
-#planner_test.cmo: planner_test.ml
-#	$(OCAMLC) -c $<
 
 #
 # Tests.
@@ -109,14 +95,8 @@ test_parser: parser_test
 test_ast: ast_test
 	./ast_test craptest
 
-test_symt: symt_test
-	./symt_test craptest
-
-#test_sast: sast_test
-#	./sast_test craptest
-
-#test_planner: planner_test
-#	./planner_test craptest
+test_pddlyte: pddlyte
+	./pddlyte craptest
 
 #
 # Cleanup.
@@ -126,4 +106,4 @@ clean:
 	rm -f *.cmo *.cmi lexer.ml parser.ml	\
 	*.mll~ *.mly~ *.ml~ *.mli~ *.c~ *.out	\
 	lexer_test parser_test ast_test		\
-	sast_test master craptest~		\
+	pddlyte master craptest~		\
