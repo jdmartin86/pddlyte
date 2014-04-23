@@ -41,30 +41,25 @@ type expr =
   | Expr_goal       of predicate list  (* :goal body *)
   | Expr_action     of action          (* :action ... *)
   | Expr_objects    of atom list       (* :objects body *)
-  | Expr_sym        of sym             (* identifiers *)
   | Expr_unit                          (* () *)                          
-
-type program = expr list (* domain and problem *)
 
 (* sexpr.atom -> string *)
 let sym_of_atom a = 
   ( match a with 
     | Atom_unit -> "" (* shouldn't be used *)
     | Atom_sym s -> s
+    | Atom_int _ -> 
+      let error_msg = "improper symbol conversion" in
+      failwith error_msg
   ) 
 
 (* ast.atom -> sym *)
 let sym_of_astatom a =
 ( match a with 
+  | Atom_nil -> ""
   | Atom_var va -> va
   | Atom_gnd ga -> ga 
 ) 
-
-(* sexpr.atom -> ast.expr *)
-let ast_of_atom atm = 
-  match atm with
-    | Atom_unit  -> Expr_unit
-    | Atom_sym s -> Expr_sym s
 
 (* sexpr.atom -> ast.atom *)
 let astatom_of_atomsym atom_sym =
@@ -90,7 +85,7 @@ let astatom_of_sexpr sx =
     | _ -> failwith "only accepts type atom sym"
   )
 
-
+(* TODO: account for nil cases *)
 (* this will need to be recursive for nested calls *)
 (* sexpr.expr -> ast.predicate *)  
 let pred_of_sexpr sx = 
@@ -109,7 +104,13 @@ let pred_of_sexpr sx =
 		Pred_var( name , [a1 ; a2] )
 	      | Atom_gnd _ -> 
 		Pred_gnd( name , [a1 ; a2] )
+	      | Atom_nil ->
+		let error_msg = "unrecognized predicate" in
+		failwith error_msg
 	    )
+	  | Atom_nil ->
+	    let error_msg = "unrecognized predicate" in
+	    failwith error_msg
 	)
       | [ Expr_atom ( Atom_sym name ) ; Expr_atom p1 ] ->
 	let a1 = astatom_of_atomsym p1 in
@@ -119,6 +120,9 @@ let pred_of_sexpr sx =
 	  | _ ->
 	    Pred_gnd( name , [a1] )
 	) 
+      | _ -> 
+	let error_msg = "unrecognized predicate" in
+	failwith error_msg
     )
   | _ -> failwith "unrecognized conjunction structure"
 )
@@ -136,9 +140,9 @@ let rec conj_of_sexpr sx =
   ( match sx with 
     | Expr_list l ->
       ( match l with
-	| [ Expr_atom ( Atom_sym name ) ; Expr_atom p1 ; Expr_atom p2 ] ->
-	  let a1 = astatom_of_atomsym p1 and 
-	      a2 = astatom_of_atomsym p2 in
+	| [ Expr_atom( Atom_sym name ) ; Expr_atom p1 ; Expr_atom p2 ] ->
+	  let a1 = astatom_of_atomsym p1 
+	  and a2 = astatom_of_atomsym p2 in
 	  ( match a1 with 
 	    | Atom_var _ -> 
 	      Conj_pos(Pred_var( name , [a1 ; a2] ))
@@ -148,7 +152,13 @@ let rec conj_of_sexpr sx =
 		  Conj_pos(Pred_var( name , [a1 ; a2] ))
 		| Atom_gnd _ -> 
 		  Conj_pos(Pred_gnd( name , [a1 ; a2] ))
+		| Atom_nil ->
+		  let error_msg = "unrecognized predicate" in
+		  failwith error_msg
 	      )
+	    | Atom_nil ->
+	      let error_msg = "unrecognized predicate" in
+	      failwith error_msg
 	  )
 	| [ Expr_atom ( Atom_sym name ) ; Expr_atom p1 ] ->
 	  let a1 = astatom_of_atomsym p1 in
@@ -162,8 +172,13 @@ let rec conj_of_sexpr sx =
 	  Conj_and ( List.map conj_of_sexpr body )
 	| [ Expr_atom ( Atom_sym "not" ) ; p1 ] -> 
 	  Conj_neg ( pred_of_sexpr p1 ) (*TODO: nesting ands *) 
+	| _ -> 
+	  let error_msg = "unrecognized conjunction" in
+	  failwith error_msg
       )
-    | _ -> failwith "syntax error: unrecognized conjunction" 
+    | _ -> 
+      let error_msg = "unrecognized conjunction" in
+      failwith error_msg
   )
 
 (* recursive type ... some day
@@ -196,12 +211,16 @@ let action_of_sexpr sx =
 	precondition = conj_of_sexpr (Expr_list(precond));
 	effect = conj_of_sexpr (Expr_list(effect))
       } 
-    | _ -> failwith "syntax error: unrecognized action structure"
+    | _ -> 
+      let error_msg = "unrecognized action structure" in
+      failwith error_msg
   )
 
 let rec ast_of_sexpr sx =  
   (match sx with
-    | Expr_atom a -> ast_of_atom a
+    | Expr_atom a -> 
+      let error_msg = "unrecognized s-expression" in
+      failwith error_msg
     | Expr_list l -> 
       ( match l with
 	| Expr_atom ( Atom_sym ":predicates" ) :: body ->
@@ -223,12 +242,18 @@ let rec ast_of_sexpr sx =
 	    | [Expr_atom ( Atom_sym "problem" ) ; 
 	       Expr_atom ( Atom_sym name )] -> 
 	      Expr_problem( name , List.map ast_of_sexpr body )
+	    | _ -> 
+	      let error_msg = "unrecognized s-expression" in
+	      failwith error_msg
 	  )
-	| Expr_atom a :: _  -> failwith "debugging atom"
-	| Expr_list l :: _  -> failwith "debugging list"
+	| _ -> 
+	  let error_msg = "unrecognized s-expression" in
+	  failwith error_msg
       )
   )
 
+
+(** test functions **)
 let string_of_ast ast =
    let sprintf  = Printf.sprintf in  (* to make the code cleaner *)
    let spaces n = String.make n ' ' in
@@ -246,8 +271,7 @@ let string_of_ast ast =
              e_list))
      in
      match ast with
-       | Expr_unit    -> sprintf "%sUNIT"       (spaces indent) 
-       | Expr_sym  s  -> sprintf "%sSYM[ %s ]"  (spaces indent) s
+       | Expr_unit -> sprintf "%sUNIT"       (spaces indent) 
        | Expr_domain ( name , body ) -> 
 	 sprintf "%sDOMAIN[ %s\n%s ]" 
            (spaces indent) name (string_of_exprs body)
@@ -270,7 +294,6 @@ let string_of_ast ast =
        | Expr_goal ( preds ) ->
 	 sprintf "%sGOAL[ ]\n"
 	   (spaces indent) 
-       | _ -> failwith "syntax error: unrecognized type"
    in
    "\n" ^ iter ast 0 ^ "\n"
      
@@ -285,7 +308,4 @@ let ast_test infile =
         Printf.printf "%s\n" (string_of_ast expr); 
         flush stdout;
         loop ()
-  in
-  loop ()
-
-
+  in loop ()

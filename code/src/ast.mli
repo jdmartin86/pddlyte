@@ -35,10 +35,7 @@ type expr =
   | Expr_goal       of predicate list  (* :goal body *)
   | Expr_action     of action          (* :action ... *)
   | Expr_objects    of atom list       (* :objects body *)
-  | Expr_sym        of sym             (* identifiers *)
   | Expr_unit                          (* () *)                          
-
-type program = expr list (* domain and problem *)
 
 (* convert s-expression into ast expression *)
 val ast_of_sexpr : Sexpr.expr -> expr
