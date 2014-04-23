@@ -2,19 +2,25 @@
 
 type sym = string
 
+(* problem table for planner *)
+type strips_problem = (* TODO: make these names consistent with others *)
+    { 
+      mutable init : Ast.predicate list;
+      mutable goal : Ast.predicate list;
+      mutable ops  : Ast.action list   ;
+    }
+
 (* environment *)
-type env = { parent: env option ; bindings: (sym, sym) Hashtbl.t }
- 
-(* symbol table for planner *)
-type strips_problem = 
-{ 
-  init : Ast.predicate list;
-  goal : Ast.predicate list;
-  ops  : Ast.action list ;
-}
+type env = 
+    { 
+      parent: env option; 
+      bindings: (sym, sym) Hashtbl.t;
+      mutable problem: strips_problem 
+    }
 
 val make : env option -> env
 
-val make_strips : strips_problem
 (* convert an ast expression into a strips problem *) 
-val strips_of_ast : env -> strips_problem -> Ast.expr -> strips_problem
+val strips_of_ast : env -> Ast.expr -> unit
+
+val strips_test : in_channel -> unit
