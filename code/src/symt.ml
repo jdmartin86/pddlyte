@@ -32,6 +32,13 @@ let rec lookup env name =
 	 | None -> raise Not_found
        )
 
+let lookup_atom env atom = 
+  ( match atom with 
+    | Atom_var a -> lookup env a
+    | Atom_gnd a -> lookup env a 
+    | _ -> raise Not_found
+  )
+
 (* insert entry into symbol table *)
 let add env name value = 
    let { parent = _ ; bindings = b } = env in
@@ -44,7 +51,6 @@ let add_all env names values =
 
 let atom_name a =
   let stop = (String.index a '-') in
-  let len = (String.length a) - stop in
   String.sub a 0 stop
 
 let atom_type a =
@@ -92,6 +98,7 @@ let translate_predicate env pred =
 	let new_env = make parent in 
 	add new_env ":predicate" name ;
 	translate_gnd_params new_env params
+      | _ -> failwith "predicate improperly parsed"
     )
 
 (* env -> pred list -> unit *)
@@ -117,13 +124,42 @@ let translate_predicates env preds =
 - ensure the parameter names are in the param list
 - if these pass, add them to the plan table
 *)
-let translate_preconds env precond =
-  ( match precond with 
-    | Conj_and conj -> failwith "progress"
-    | Conj_neg pred -> failwith "progress"
-    | Conj_pos pred -> failwith "progress"
-    | _ -> None
+
+let check_params env params = 
+  List.iter (fun p -> ignore( lookup_atom env p )) params  
+
+let check_var_pred env pred = 
+  ( match pred with 
+    | Pred_var( name , params ) ->
+      let value = lookup env name in
+      ( match value with
+	| ":predicate" -> 
+	  check_params env params
+	| _ -> 
+	  let error_msg = "undefined predicate" in
+	  raise (Compile_error error_msg)
+      )
+    | _ -> 
+      let error_msg = "predicates must have variable parameters" in
+	raise (Compile_error error_msg) 
   )
+
+let rec translate_precondition env precond =
+  let recurse = translate_precondition env in 
+  ( match precond with 
+    | Conj_and conj -> 
+      List.iter recurse conj
+    | Conj_neg pred -> 
+      check_var_pred env pred
+    | Conj_pos pred -> 
+      check_var_pred env pred
+    | _ -> 
+      let error_msg = "empty precondition" in
+	raise (Compile_error error_msg)
+  )
+
+let translate_effect env effect = 
+  translate_precondition env effect 
 
 (* TODO: this is quite ugly ... *)
 let translate_action env act = 
@@ -133,14 +169,49 @@ let translate_action env act =
         precondition = precond ;
         effect = eff 
       } = act in
-  add env ":action" n ; (* add action name to global list *)
+  add env n ":action" ; (* add action name to global list *)
   let parent = Some(env) in 
   let param_env = make parent in (* make parameter table *)
   translate_var_params param_env params ;
-  let param_parent = Some(param_env) in 
-  (* look for names and params in tables *)
-  translate_preconds param_parent precond ;
-  failwith "progress"
+  translate_precondition param_env precond;
+  translate_effect param_env eff  
+
+let translate_object env param =
+  ( match param with  (* seek type *)
+    | Atom_gnd a -> 
+      add env (atom_name a) (atom_type a)
+    | Atom_var a ->
+      let error_msg = "objects may only contain grounded atoms" in
+      raise (Compile_error error_msg)
+    | _ -> failwith "parameter improperly parsed"
+  )
+
+let translate_objects env params = 
+  let translate_obj = translate_object env in
+  List.iter translate_obj params
+
+let check_params env params = 
+  List.iter (fun p -> ignore( lookup_atom env p )) params  
+
+let check_gnd_pred env pred = 
+  ( match pred with 
+    | Pred_gnd( name , params ) ->
+      let value = lookup env name in
+      ( match value with
+	| ":predicate" -> 
+	  check_params env params
+	| _ -> 
+	  let error_msg = "undefined predicate" in
+	  raise (Compile_error error_msg)
+      )
+    | _ -> 
+      let error_msg = "states must have grounded parameters" in
+	raise (Compile_error error_msg) 
+  )
+
+let translate_state env state =
+  let check_state = check_gnd_pred env in
+  List.iter check_state state
   
 
 (* ast -> plan_table *)
@@ -152,13 +223,18 @@ let rec translate_ast env ast =
       translate_predicates env preds
     | Expr_action( act ) -> 
       translate_action env act
-    | Expr_objects( objs ) -> failwith "progress"
-    | Expr_init( init ) -> failwith "progress"
-    | Expr_goal( goal ) -> failwith "progress"
+    | Expr_objects( objs ) -> 
+      translate_objects env objs
+    | Expr_init( init ) -> 
+      translate_state env init
+    | Expr_goal( goal ) -> 
+      translate_state env goal
     | Expr_domain( name , body ) -> 
-	add env ":domain" name ; List.iter recurse body
+      add env name ":domain" ; List.iter recurse body
     | Expr_problem( name , body ) -> 
-      	add env ":problem" name ; List.iter recurse body
+      let parent = Some(env) in
+      let new_env = make parent in
+      add env name ":problem" ; List.iter (translate_ast new_env) body
   )
 
 let plantable_of_ast ast = 
