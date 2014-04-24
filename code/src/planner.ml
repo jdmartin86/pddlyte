@@ -1,5 +1,6 @@
 (* planner *)
 open Ast
+open Strips
 
 (* ( atom , atom ) Hashtbl *)
 module Atomhash = Hashtbl.Make
@@ -52,10 +53,10 @@ let partition_conj_to_pred p =
     | Conj_nil   -> ( []  , []  )
   )
 
-(* preconds -> preds *)
+(* preconds -> preds 
 let partition_pred p = List.partition 
       ( fun x -> match x with | Pred_pos _ -> true | _ -> false ) p
-
+*)
 (* ast.predicate -> ast.sym *)
 let predname_of_pred p =
   ( match p with
@@ -206,7 +207,7 @@ let goal_test s1 s2 =
     | _ -> false
   ) 
 
-(* loop over all operators and accumulate applicable ops *)
+(* loop over all operators and accumulate applicable ops 
 let app_ops s ops = 
   let rec loop acc ops =
     ( match ops with 
@@ -216,10 +217,10 @@ let app_ops s ops =
 	and env = Atomhash.create 10
 	and ao = applicable_actions [] op ( pp , np ) env s
 	in loop ( ao::acc ) t
-    )
-
+    ) in loop [] ops
+*)
 (* 'a -> 'a list -> 'a list *)
-let remove_pred l p =
+let remove_pred l p = 
   let rec loop acc l =
     ( match l with
       | [] -> acc
@@ -229,12 +230,9 @@ let remove_pred l p =
     )
   in loop [] l
 
-(* gets grounded effect of a grounded predicate *)
-let geff_of_pred env p =
-global symbol enviornment needs an action struct from that
-
+(* TODO: successor function *)
 (* state, op -> state *)
-(* ast.predicate list -> ast.predicate -> ast.predicate list *)
+(* ast.predicate list -> ast.predicate -> ast.predicate list 
 let succ s o env = (* o is a grounded pred list *)
   let act = Atomhash.find env (predname_of_pred o) (* TODO: globalhash *)
   and ( pos , neg ) = partition_preds act 
@@ -252,17 +250,17 @@ let succ s o env = (* o is a grounded pred list *)
       | h::t -> loop (remove_pred s h) t 
     )
   in loop s ne
-
-(* 
+*)
+(* TODO: planner!!!! 
  * - how to handle cycling 
  * - how to handle deadends -- backtrack to op choice
  * - how to handle multiple goal states
  * - how to handle complimentary effects 
- *)
-let fsearch env = 
-  let ops = actions_of_env env 
-  and s0 = init_of_env env 
-  and g = goal_of_env env in 
+ *
+let fsearch problem = 
+  let ops = problem.actions 
+  and s0 = problem.init 
+  and g = problem.goal in 
   let rec loop plan s ops =
     if ( goal_test s g ) then plan
     else 
@@ -274,67 +272,22 @@ let fsearch env =
 	  loop (o::plan) s t  (* plan from there *)
       )
   in loop [] s0
- 
-(*
-(* successors *)
-let rec successors n = function
-  | [] -> []
-  | (s,t) :: edges ->
-    if s = n then 
-      t :: successors n edges
-    else 
-      successors n edges
-    
-(* dfs *)  
-let rec dfs actions visited = function
-   | [] -> List.rev visited
-   | s :: states -> 
-      if List.mem s visited then
-        dfs actions visited states
-      else 
-        dfs actions (s::visited) ((successors s actions) @ states)
-
-*)
-
-(* states: list of preds
- * action set: action list
- * how to compute goal test:
- *   compare preds and remove positive returns from lists
- * how to fail with no applicable actions: exception
  *)
-
-(* algorithm for generating search space with dfs*)
-(*
-   starting in the initial state,
-   for every operator
-      check if preconditions are satisfied in state.
-      
-      if preconditions are satisfied, and
-         if successor hasn't been visited yet,
-           add a successor that satisfies operator effects.
-           recurse with successor state
-      else 
-         check next operator
-
-   if no solution
-      return no solution
-*)
-
-let plan_of_ast = 
-
-let string_of_plan ast = failwith "not implemented yet"
+let plan problem =
+  failwith "progress"
 
 let planner_test infile =
   let lexbuf = Lexing.from_channel infile in
-  let rec loop () =
+  let new_env = make None in
+  let rec loop env =
     let sexpr  = Parser.parse Lexer.token lexbuf in
     match sexpr with
-      | None -> ()
+      | None -> 
+	(* plan here *)
+	() 
       | Some s ->
-        let ast = Ast.ast_of_sexpr s in
-	let plan = plan_of_ast in 
-        Printf.printf "%s\n" ( string_of_plan ast ); 
+        let ast = ast_of_sexpr s in
+	let _ = strips_of_ast env ast in
         flush stdout;
-        loop ()
-  in
-  loop ()
+        loop env
+  in loop new_env
