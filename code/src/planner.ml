@@ -280,13 +280,21 @@ let ground_action env act =
   Pred_gnd( act.name , vals ) 
 
 (* 'a list -> 'a list -> bool *)
-let goal_test s1 s2 = 
-  let intersection = intersect s1 s2 in
-  ( match intersection with
-    | [] -> true
-    | _ -> false
-  ) 
 
+(* - match each goal pred with test state *)
+let goal_test state goal =
+  let rec loop acc goal_preds = 
+    ( match goal_preds with 
+      | [] -> acc 
+      | gp::t -> 
+	let intersection = intersect [gp] state in
+	( match intersection with
+	  | [] -> [false]
+	  | _ -> loop (true::acc) t
+	)
+    )
+  in List.fold_left (fun x y -> x && y ) true (loop [] goal)
+ 
 (* preconds -> pred *)
 let partition_conjunction conj = 
   ( match conj with 
@@ -367,26 +375,20 @@ let  remove_complimentary_effects acts act_defs =
   )
   in loop [] acts
 
-
+(* 
+   - disallow preconditions that match the goal state
+   - closed-world assumption: all objects that exist are in s0
+*)
 let rec applicable_actions acc act act_defs ( pos_preds , neg_preds ) env s  =
   ( match pos_preds with
-    | [] ->       (* TODO: add support for negative preds *)
+    | [] -> 
+     (* let intersection = intersect s neg_preds in*)
+     (* TODO: add support for negative preds *)
       let a = ground_action env act in
-      let cmp_eff = true&&(complimentary_effects a act_defs) in 
-      if cmp_eff then 
-      else a::acc
+      a::acc
     | pp :: pt -> (* choose a predicate *)
       let name = predname_of_pred pp in
       let sps = intersect_preds name s in (* common ppreds with state *)
-     (* let error_msg = 
-	    "\nNAME: " ^
-	    (name) ^
-	    "\nSTATE: " ^
-	    (string_of_syms (List.map string_of_pred s)) ^
-	    "\nINTERSECTION: " ^
-	    (string_of_syms (List.map string_of_pred sps))
-      in
-      failwith error_msg;*)
       let rec loop sps = 
 	( match sps with 
 	  | [] -> 
@@ -400,26 +402,28 @@ let rec applicable_actions acc act act_defs ( pos_preds , neg_preds ) env s  =
 	    in
 	    raise (Planner_error error_msg)
 	  | sp::t -> 
-(*	    let _ =
-
-	      Printf.printf"\n\nSPS:%s" 
-	      (string_of_syms (List.map string_of_pred sps)) in
-*)
 	    let tenv = extend env sp pp in
-(*
-	    let _ = Printf.printf "\nTEST ENV" in
-	    let _ = dump_hash tenv in
-	    let _ = Printf.printf "\nREF ENV" in
-	    let _ = dump_hash env in
-*)	    
 	    let valid_bindings = bindings_valid tenv env in
 	   
 	    if ( valid_bindings ) then (
-	      
-	      if ( pt = [] ) then
-	      
-	      
-	      applicable_actions acc act act_defs ( pt , neg_preds ) tenv s
+	      ( match pt with 
+		| [] -> (* check for complimentary effects *) 
+		  let a = ground_action env act in
+		  let cmp_eff = complimentary_effects a act_defs in
+		  if ( cmp_eff ) then (
+		    let _ = Atomhash.clear env in
+		    let ( pos_preds , _ ) = partition_to_predicates act.precondition in
+		    let h = List.hd s in
+		    let t = List.tl s in
+		    let s1 = t@[h] in 
+
+		    applicable_actions acc act act_defs ( pos_preds , neg_preds ) tenv s1
+		    ) 
+		  else 
+		    applicable_actions acc act act_defs ( pt , neg_preds ) tenv s
+		| _ -> applicable_actions acc act act_defs ( pt , neg_preds ) tenv s
+	      )
+		
 	    ) 
 	    else (
 	      let _ = retract env pp in
@@ -441,12 +445,6 @@ let app_ops s acts =
 	let _ = Printf.printf "\nAPP ACTIONS: %s"
 	  (string_of_syms (List.map string_of_pred ao))
 	in
-
-	let ao = remove_complimentary_effects ao acts in
-	
-	let _ = Printf.printf "\nAPP ACTIONS: %s"
-	  (string_of_syms (List.map string_of_pred ao))
-	in
 	
 	loop ( ao::acc ) t
     ) in loop [] acts
@@ -460,12 +458,12 @@ let app_ops s acts =
  *)
 let succ state act acts = (* act is a grounded pred list *)
   let ( pe , ne ) = partition_to_grounded_effect acts act in
-  
+ (* 
   let _ = Printf.printf "\nPOS EFFECTS: %s"
     (string_of_syms (List.map string_of_pred pe)) in
   let _ = Printf.printf "\nNEG EFFECTS: %s"
     (string_of_syms (List.map string_of_pred ne)) in
-
+ *)
   let rec loop s ne = (* loop through negative effects first *)
     ( match ne with
       | [] -> 
@@ -491,13 +489,14 @@ let succ state act acts = (* act is a grounded pred list *)
 let fsearch problem = 
   let { init = s0 ; goal = g ; ops = acts } = problem in
   let rec loop plan s aset =
+    
     if ( goal_test s g ) then plan
     else
       let app = app_ops s aset in (* set of all app ops in s *)
-      
+(*      
       let _ = Printf.printf "\nSTATE = %s "
 	(string_of_syms (List.map string_of_pred s)) in
-(*
+
       let _ = Printf.printf "\nAPP OPS = %s "
 	(string_of_syms (List.map string_of_pred app)) in
 *)
@@ -507,16 +506,20 @@ let fsearch problem =
 	  raise (Planner_error error_msg)
 	| a::t -> (* TODO: implement backtracking!*)
           let s = succ s a acts in
-	  
+(*
 	  let _ = Printf.printf "\nSUCC: %s"
 	    (string_of_syms (List.map string_of_pred app)) in
+*)
 	  loop (a::plan) s acts  (* plan from there *)
       )
   in loop [] s0 acts
 
 let solve problem =
   let plan = fsearch problem in
-  failwith "PROGRESS!!!"
+  failwith 
+    "\nPLAN:" ^
+    (string_of_syms (List.map string_of_pred plan))
+
 
 let planner_test infile =
   let lexbuf = Lexing.from_channel infile in
