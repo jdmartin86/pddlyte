@@ -138,6 +138,9 @@ let prednames_of_preds preds = List.map predname_of_pred preds
 (* 'a list -> 'a list -> 'a list *)
 let intersect l1 l2 = List.filter (fun x -> List.mem x l2) l1 
 
+(* 'a list -> 'a list -> 'a list *)
+let disjunction l1 l2 = List.filter (fun x -> not(List.mem x l2)) l1 
+
 (* ast.predicate list -> ast.predicate list -> ast.sym list *)
 let intersect_prednames l1 l2 = 
   intersect ( prednames_of_preds l1 ) ( prednames_of_preds l2 )
@@ -375,17 +378,22 @@ let  remove_complimentary_effects acts act_defs =
   )
   in loop [] acts
 
+let permute_preds state =
+  let h = List.hd state in
+  let t = List.tl state in
+  t@[h] 
+
 (* 
    - disallow preconditions that match the goal state
    - closed-world assumption: all objects that exist are in s0
 *)
-let rec applicable_actions acc act act_defs ( pos_preds , neg_preds ) env s  =
+let rec applicable_actions act act_defs ( pos_preds , neg_preds ) env s  =
   ( match pos_preds with
     | [] -> 
      (* let intersection = intersect s neg_preds in*)
      (* TODO: add support for negative preds *)
       let a = ground_action env act in
-      a::acc
+      a
     | pp :: pt -> (* choose a predicate *)
       let name = predname_of_pred pp in
       let sps = intersect_preds name s in (* common ppreds with state *)
@@ -417,11 +425,11 @@ let rec applicable_actions acc act act_defs ( pos_preds , neg_preds ) env s  =
 		    let t = List.tl s in
 		    let s1 = t@[h] in 
 
-		    applicable_actions acc act act_defs ( pos_preds , neg_preds ) tenv s1
+		    applicable_actions act act_defs ( pos_preds , neg_preds ) tenv s1
 		    ) 
 		  else 
-		    applicable_actions acc act act_defs ( pt , neg_preds ) tenv s
-		| _ -> applicable_actions acc act act_defs ( pt , neg_preds ) tenv s
+		    applicable_actions act act_defs ( pt , neg_preds ) tenv s
+		| _ -> applicable_actions act act_defs ( pt , neg_preds ) tenv s
 	      )
 		
 	    ) 
@@ -434,40 +442,45 @@ let rec applicable_actions acc act act_defs ( pos_preds , neg_preds ) env s  =
 (* loop over all operators and accumulate applicable ops *)
 (* ast.pred list -> ast.action list -> ast.pred list *)  
 let app_ops s acts = 
-  let rec loop acc ops =
+  let rec next_op acc ops =
     ( match ops with 
-      | [] -> List.flatten acc 
-      | op::t -> 
+      | [] -> 
+ 	let _ = Printf.printf "\nAPP OPS\n %s" (string_of_syms (List.map string_of_pred (List.flatten acc))) in 
+	List.flatten acc
+      | op::remaining_ops -> 
 	let ( pp , np ) = partition_to_predicates op.precondition in
 	let env = Atomhash.create 10 in
-	let ao = applicable_actions [] op acts ( pp , np ) env s in
-
-	let _ = Printf.printf "\nAPP ACTIONS: %s"
-	  (string_of_syms (List.map string_of_pred ao))
-	in
+	let max_permutations = List.length s in
 	
-	loop ( ao::acc ) t
-    ) in loop [] acts
+	let rec permute_state act_acc num_permutations state = 
+	  if num_permutations = max_permutations then
+	    next_op ( act_acc::acc ) remaining_ops
+	  else
+	    let s1 = permute_preds state in
+
+	    let _ = Printf.printf "\nPSTATE:\n%s"
+	      (string_of_syms (List.map string_of_pred s1)) in
   
-(* TODO: successor function *)
-(* state, op -> state *)
+	    let ao = applicable_actions op acts ( pp , np ) env s1 in
+	    let _ = Printf.printf "\nACT%d \n%s" 
+	      num_permutations
+	      (string_of_pred ao) in
+
+	    if List.mem ao act_acc then 
+	      permute_state act_acc (num_permutations+1) s1
+	    else 
+	      permute_state (ao::act_acc) (num_permutations+1) s1
+	in permute_state [] 0 s
+    ) 
+  in next_op [] acts
+
 (* ast.predicate list -> ast.predicate -> ast.predicate list *)
-(*
- * - remove negative effects
- * - apply positive effects
- *)
-let succ state act acts = (* act is a grounded pred list *)
-  let ( pe , ne ) = partition_to_grounded_effect acts act in
- (* 
-  let _ = Printf.printf "\nPOS EFFECTS: %s"
-    (string_of_syms (List.map string_of_pred pe)) in
-  let _ = Printf.printf "\nNEG EFFECTS: %s"
-    (string_of_syms (List.map string_of_pred ne)) in
- *)
-  let rec loop s ne = (* loop through negative effects first *)
+let succ state act opset = (* act is a grounded pred list *)
+  let ( pe , ne ) = partition_to_grounded_effect opset act in
+  let rec loop s ne = (* remove negative effects *)
     ( match ne with
       | [] -> 
-	let rec iloop s pe =  (* loop through positive *)
+	let rec iloop s pe =  (* add positive effects *)
 	  ( match pe with
 	    | [] -> List.rev s
 	    | h::t -> iloop (h::s) t
@@ -478,21 +491,32 @@ let succ state act acts = (* act is a grounded pred list *)
   in loop state ne
 
 (* TODO: planner!!!! 
- * - how to handle cycling 
+ * - how to handle cycling -- keep list of visited nodes
  * - how to handle deadends -- backtrack to op choice
  * - how to handle multiple goal states
  * - how to handle complimentary effects 
  * 
  * - a cool spot to parallelize is the applicable action choice
  *  - use consistent notation with this and report
+ * 
+ * 
+
+ * look at the plan on each iteration
+ * - prioritize with the longest plan
+ * - how to backtrack. ... 
+ *  - how to handle visited nodes -- don't include in p queue
+ * 
+ * notation
+- variable actions are operators
+- grounded actons are actions 
+
  *)
 let fsearch problem = 
-  let { init = s0 ; goal = g ; ops = acts } = problem in
-  let rec loop plan s aset =
-    
-    if ( goal_test s g ) then plan
+  let { init = s0 ; goal = g ; ops = opset } = problem in
+  let rec loop plan s aset visited =
+    if ( goal_test s g ) then List.rev plan
     else
-      let app = app_ops s aset in (* set of all app ops in s *)
+      let app = app_ops s opset in (* set of all app ops in s *)
 (*      
       let _ = Printf.printf "\nSTATE = %s "
 	(string_of_syms (List.map string_of_pred s)) in
@@ -500,25 +524,37 @@ let fsearch problem =
       let _ = Printf.printf "\nAPP OPS = %s "
 	(string_of_syms (List.map string_of_pred app)) in
 *)
-      ( match app with (* app = list of preds *)
-	| [] -> 
-	  let error_msg = "no applicable operators" in
-	  raise (Planner_error error_msg)
-	| a::t -> (* TODO: implement backtracking!*)
-          let s = succ s a acts in
-(*
-	  let _ = Printf.printf "\nSUCC: %s"
-	    (string_of_syms (List.map string_of_pred app)) in
-*)
-	  loop (a::plan) s acts  (* plan from there *)
-      )
-  in loop [] s0 acts
+      fringe = succs app s (* list of all successors *)
+      priorityqueue = prioritize fringe (* biases forward progress *)
+      s = choose_succ priority_queue
+      recurse with s as initial state
+
+	-- backtracking involves removing last action from plan and 
+           choosing next element of priority queue. when 
+
+
+      (* this should recognize back-tracking states and remove a statefrom their path *)
+      
+
+      let rec next_action app_acts = 
+	( match app_acts with (* app = list of preds *)
+	  | [] -> 
+	    let error_msg = "no applicable operators" in
+	    raise (Planner_error error_msg)
+	  | a::t -> (* TODO: implement backtracking!*)
+            let s = succ s a opset in
+	    if List.mem s visited then next_action t
+	    else 
+	      loop (a::plan) s opset (s::visited) (* plan from there *)
+	)
+      in next_action app
+  in loop [] s0 opset []
 
 let solve problem =
   let plan = fsearch problem in
-  failwith 
-    "\nPLAN:" ^
-    (string_of_syms (List.map string_of_pred plan))
+  let _ = Printf.printf "\nPLAN: %s" 
+    (string_of_syms (List.map string_of_pred plan)) in
+  failwith "done"
 
 
 let planner_test infile =
