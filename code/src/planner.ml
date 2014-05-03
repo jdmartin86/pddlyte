@@ -283,20 +283,21 @@ let ground_action env act =
   Pred_gnd( act.name , vals ) 
 
 (* 'a list -> 'a list -> bool *)
-
-(* - match each goal pred with test state *)
-let goal_test state goal =
+(* match each goal pred with test state *)
+let goal_test pplan goal =
+  let state = List.hd pplan in
   let rec loop acc goal_preds = 
     ( match goal_preds with 
       | [] -> acc 
-      | gp::t -> 
+      | gp::t -> (*TODO: why can't i do a simple intersect?*)
 	let intersection = intersect [gp] state in
 	( match intersection with
 	  | [] -> [false]
 	  | _ -> loop (true::acc) t
 	)
     )
-  in List.fold_left (fun x y -> x && y ) true (loop [] goal)
+  in List.fold_left (fun x y -> x && y ) true (loop [] goal)	
+
  
 (* preconds -> pred *)
 let partition_conjunction conj = 
@@ -387,7 +388,7 @@ let permute_preds state =
    - disallow preconditions that match the goal state
    - closed-world assumption: all objects that exist are in s0
 *)
-let rec applicable_actions act act_defs ( pos_preds , neg_preds ) env s  =
+let rec applicable_action act act_defs ( pos_preds , neg_preds ) env s  =
   ( match pos_preds with
     | [] -> 
      (* let intersection = intersect s neg_preds in*)
@@ -425,11 +426,11 @@ let rec applicable_actions act act_defs ( pos_preds , neg_preds ) env s  =
 		    let t = List.tl s in
 		    let s1 = t@[h] in 
 
-		    applicable_actions act act_defs ( pos_preds , neg_preds ) tenv s1
+		    applicable_action act act_defs ( pos_preds , neg_preds ) tenv s1
 		    ) 
 		  else 
-		    applicable_actions act act_defs ( pt , neg_preds ) tenv s
-		| _ -> applicable_actions act act_defs ( pt , neg_preds ) tenv s
+		    applicable_action act act_defs ( pt , neg_preds ) tenv s
+		| _ -> applicable_action act act_defs ( pt , neg_preds ) tenv s
 	      )
 		
 	    ) 
@@ -441,7 +442,7 @@ let rec applicable_actions act act_defs ( pos_preds , neg_preds ) env s  =
 
 (* loop over all operators and accumulate applicable ops *)
 (* ast.pred list -> ast.action list -> ast.pred list *)  
-let app_ops s acts = 
+let applicable_actions s acts = 
   let rec next_op acc ops =
     ( match ops with 
       | [] -> 
@@ -461,7 +462,7 @@ let app_ops s acts =
 	    let _ = Printf.printf "\nPSTATE:\n%s"
 	      (string_of_syms (List.map string_of_pred s1)) in
   
-	    let ao = applicable_actions op acts ( pp , np ) env s1 in
+	    let ao = applicable_action op acts ( pp , np ) env s1 in
 	    let _ = Printf.printf "\nACT%d \n%s" 
 	      num_permutations
 	      (string_of_pred ao) in
@@ -490,50 +491,61 @@ let succ state act opset = (* act is a grounded pred list *)
     )
   in loop state ne
 
-(* TODO: planner!!!! 
- * - how to handle cycling -- keep list of visited nodes
- * - how to handle deadends -- backtrack to op choice
- * - how to handle multiple goal states
- * - how to handle complimentary effects 
- * 
- * - a cool spot to parallelize is the applicable action choice
- *  - use consistent notation with this and report
- * 
- * 
+(* returns all available nodes (i.e. partial plans) not previously visited *)
+let successors pplan visited opset =
+  let state = List.hd pplan in
+  (* all acts: includes backward moves, no self loops *)
+  let actions = applicable_actions state opset in 
+  ( match actions with (* app = list of preds *)
+    | [] -> 
+      let error_msg =
+	"no applicable actions found for state:\n" ^
+	  (string_of_syms (List.map string_of_pred (List.hd s)))
+      in
+      raise (Planner_error error_msg)
+    | _ -> 
+      let avaliable_states = List.map (successor state) actions in
+      not_visited_succs = disjunction available_states visited 
+  )
 
- * look at the plan on each iteration
- * - prioritize with the longest plan
- * - how to backtrack. ... 
- *  - how to handle visited nodes -- don't include in p queue
- * 
- * notation
-- variable actions are operators
-- grounded actons are actions 
+let search_exhausted pplan init_state =
+  goal_test pplan init_state 
 
- *)
+let backtrack pplan =
+  List.tl pplan
+
+let prioritize pplans =
+  List.sort ( fun l -> List.length l ) pplans
+
+(* states are now partial plans *)
 let fsearch problem = 
   let { init = s0 ; goal = g ; ops = opset } = problem in
-  let rec loop plan s aset visited =
-    if ( goal_test s g ) then List.rev plan
+  let rec dfs state visited =
+    if ( goal_test state g ) then List.rev state
     else
-      let app = app_ops s opset in (* set of all app ops in s *)
+      let fringe = successors state visited opset in
+      ( match fringe with 
+	| [] -> 
+	  if search_exhausted state s0 then
+	    let error_msg = "Problem has no solution" in
+	    raise (Planner_error error_msg)
+	  else(* easy if state is partial plan *)
+	    dfs (backtrack state) (state::visited)
+	| _ -> 
+	  let priority_queue = prioritize fringe in
+	  let succ = List.hd priority_queue in
+	  dfs succ (state::visited)
+      )
+  in dfs s0 []
+
 (*      
       let _ = Printf.printf "\nSTATE = %s "
 	(string_of_syms (List.map string_of_pred s)) in
 
       let _ = Printf.printf "\nAPP OPS = %s "
 	(string_of_syms (List.map string_of_pred app)) in
-*)
-      fringe = succs app s (* list of all successors *)
-      priorityqueue = prioritize fringe (* biases forward progress *)
-      s = choose_succ priority_queue
-      recurse with s as initial state
 
-	-- backtracking involves removing last action from plan and 
-           choosing next element of priority queue. when 
-
-
-      (* this should recognize back-tracking states and remove a statefrom their path *)
+      - no applicable actions?
       
 
       let rec next_action app_acts = 
@@ -548,7 +560,8 @@ let fsearch problem =
 	      loop (a::plan) s opset (s::visited) (* plan from there *)
 	)
       in next_action app
-  in loop [] s0 opset []
+*)
+  
 
 let solve problem =
   let plan = fsearch problem in
