@@ -76,8 +76,14 @@ module Atomhash = Hashtbl.Make
 (* returns the intersection of two lists *)
 let intersect l1 l2 = List.filter (fun x -> List.mem x l2) l1
 
-(* *)
-let backtrack pplan = List.tl pplan
+(* removes the last state-action combination from a partial plan *)
+let backtrack pplan = 
+  ( match pplan with 
+    | state::act::prior_pplan -> prior_pplan
+    | _ -> 
+      let error_msg = "backtrack: improper input" in
+      failwith error_msg
+  )
 
 (* sorts a list of partial plans with respect to their depth *)
 let prioritize pplans =
@@ -217,25 +223,6 @@ let extend env name_pred val_pred =
   let test_env = Atomhash.copy env in
   bind test_env (pred_val name_pred) (pred_val val_pred)
 
-(* remove bindings associated with predicate *)
-let retract env pred =
-  List.iter (fun k -> Atomhash.remove env k ) (pred_val pred)
-
-(* syncronizes reference bindings with test bindings *)
-let sync test_env ref_env =
-  let keys = dump_keys test_env in
-  let vals = dump_vals test_env in
-  let rec loop acc names values  = 
-    ( match ( names , values ) with 
-      | ( [] , [] ) -> ()
-      | (test_name::t1 , test_val::t2 ) -> 
-	Atomhash.replace ref_env test_name test_val
-      | ( _ , _ ) ->
-	let error_msg = "sync: improper input" in
-	failwith error_msg
-    )
-  in loop keys vals 
-
 (* checks if test bindings are consistent with reference bindings *)
 let bindings_valid test_env ref_env = 
   let test_names = dump_keys test_env in (*lookup every name in ref*)
@@ -272,14 +259,14 @@ let partition_to_predicates conj =
 (* checks if the goal is a subset of partial plan *)
 let goal_test pplan goal =
   let state = List.hd pplan in
-  let rec loop acc goal_preds = 
+  let rec loop check_sum goal_preds = 
     ( match goal_preds with 
-      | [] -> acc 
-      | gp::t -> 
+      | [] -> check_sum 
+      | gp::remaining_goal_preds -> 
 	let intersection = intersect [gp] state in
 	( match intersection with
 	  | [] -> [false]
-	  | _ -> loop (true::acc) t
+	  | _ -> loop (true::check_sum) remaining_goal_preds
 	)
     ) 
 in List.fold_left (fun x y -> x && y ) true (loop [] goal)
@@ -288,7 +275,7 @@ in List.fold_left (fun x y -> x && y ) true (loop [] goal)
 
 (* checks if the partial plan is the intial state *)
 let search_exhausted pplan init_state =
-  goal_test pplan init_state 
+  goal_test pplan init_state (* TODO: is this valid for all cases?*)
 
 (* outputs partitioned, grounded effects *)
 let partition_to_grounded_effect op action =
@@ -309,15 +296,13 @@ let complimentary_effects action op =
     | _ -> true
   )
 
-
 (* apply an action and return the successor state *)
-(* doesn't preserve order!!! not sure if this is a problem ...  *)
 let successor state opset action = (* act is a grounded pred list *)
   let op = lookup_op opset (pred_name action) in
   let ( pos_effs , neg_effs ) = partition_to_grounded_effect op action in
   let rec remove_neg_effects s peffs neffs =
     ( match neffs with
-      | [] -> peffs@s
+      | [] -> action::peffs@s
       | neg_eff::t -> (* check for repeating effects in strips *)
 	let matching_effects = matching_preds neg_eff pos_effs in
 	( match matching_effects with
@@ -423,47 +408,49 @@ let successors pplan visited opset =
       failwith error_msg
     | _ ->
       let all_succs = List.map (successor state opset) actions in
-      let rec loop applicable_pplans succs  = 
+      let rec filter applicable_pplans succs = 
 	( match succs with 
 	  | [] -> applicable_pplans
-	  | succ::remaining_succs ->
-	    let prior_state = List.hd pplan in
-	    if succ = prior_state then 
-	      loop applicable_pplans remaining_succs
+	  | succ_act::remaining_succs ->
+	    let act = List.hd succ_act and succ = List.tl succ_act in
+	    if succ = state then 
+	      filter applicable_pplans remaining_succs
 	    else
 	      if List.mem succ pplan then
 		let prior_pplan = pplan_to succ pplan in
-		loop (prior_pplan::applicable_pplans) remaining_succs
+		filter (prior_pplan::applicable_pplans) remaining_succs
 	      else
-		let new_pplan = succ::pplan in
-		loop (new_pplan::applicable_pplans) remaining_succs
+		let new_pplan = succ::[act]::pplan in
+		filter (new_pplan::applicable_pplans) remaining_succs 
 	)
-      in loop [] all_succs
+      in filter [] all_succs
   )
 
 (* states are now partial plans *)
 let fsearch problem = 
   let { init = s0 ; goal = g ; ops = opset } = problem in
   let rec dfs state visited =
-    if ( goal_test state g ) then List.rev state
+    if ( goal_test state g ) then List.rev state 
     else
       let fringe = successors state visited opset in
       ( match fringe with 
 	| [] -> 
-	  if search_exhausted state s0 then
+	  if search_exhausted state s0 then 
 	    let error_msg = "Problem has no solution" in
 	    failwith error_msg
-	  else(* easy if state is partial plan *)
-	    dfs (backtrack state) (state::visited)
+	  else
+	    dfs (backtrack state) (state::visited) 
 	| _ -> 
 	  let priority_queue = prioritize fringe in
 	  let succ = List.hd priority_queue in
 	  dfs succ (state::visited)
       )
   in dfs [s0] []
-
+  
 let solve problem =
   let plan = fsearch problem in
+  (* filter for actions here *)
+
   let string_of_state state = 
     (string_of_syms(List.map string_of_pred state)) in
   let _ = Printf.printf "\nPLAN: %s" 
