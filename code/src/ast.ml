@@ -1,8 +1,4 @@
-(*
- * ast.ml
- *
- * Abstract syntax tree.
- *)
+(* ast.ml *)
 
 open Sexpr
 
@@ -181,22 +177,6 @@ let rec conj_of_sexpr sx =
       failwith error_msg
   )
 
-(* recursive type ... some day
-type conjunction =
-  | Conj_and of conjunction list 
-  | Conj_neg of conjunction 
-  | Conj_pos of conjunction
-  | Pred     of predicate
- evaluates nested conjunction lists to preds 
-let rec resolve_conj pred =
-( match pred with 
-  | Conj_and ( c ) -> Conj_and ( List.map resolve_conj c )
-  | Conj_neg ( c ) -> Conj_neg ( resolve_conj c )
-  | Conj_pos ( c ) -> Conj_pos ( resolve_conj c )
-  | Pred p -> Pred p  
-) 
-*)
-
 (* sexpr.expr list -> ast.action *)
 let action_of_sexpr sx =
   ( match sx with
@@ -254,15 +234,65 @@ let rec ast_of_sexpr sx =
 
 
 (** test functions **)
+let sprintf  = Printf.sprintf   (* to make the code cleaner *)
+let spaces n = String.make n ' '
+
+let rec string_of_syms sym_lst = 
+  (match sym_lst with
+    | []   -> ""
+    | [s] -> s
+    | h::t -> h ^ " " ^ (string_of_syms t)
+  )
+
+let string_of_atom atom =
+  ( match atom with 
+    | Atom_var a -> a
+    | Atom_gnd a -> a
+    | Atom_nil -> ""
+  )
+
+let string_of_pred pred = 
+  ( match pred with 
+    | Pred_var( name , params ) ->
+      sprintf "PRED_VAR( %s , %s )\n" 
+	name 
+	(string_of_syms(List.map string_of_atom params))
+    | Pred_gnd( name , params ) ->
+      sprintf "PRED_GND( %s , %s )\n" 
+	name 
+	(string_of_syms(List.map string_of_atom params))
+    | Pred_nil -> 
+      "PRED_NIL()\n"
+  )
+
+let string_of_params params = 
+  sprintf "PARAMETERS( %s )"
+  (string_of_syms (List.map string_of_atom params))
+
+let rec string_of_conj conj = 
+  let recurse = string_of_conj in
+  ( match conj with 
+    | Conj_and c -> 
+      sprintf "CONJ_AND(%s)"
+      (string_of_syms (List.map recurse c))
+    | Conj_pos c -> 
+      sprintf "CONJ_POS(%s)"
+	(string_of_pred c)
+    | Conj_neg c -> 
+      sprintf "CONJ_NEG(%s)"
+	(string_of_pred c)
+    | Conj_nil -> ""
+  )
+
+let string_of_precond precond =
+  sprintf "PRECONDITION( %s )"
+  (string_of_conj precond)
+
+let string_of_effect effect =
+  sprintf "EFFECT( %s )"
+  (string_of_conj effect)
+
 let string_of_ast ast =
-   let sprintf  = Printf.sprintf in  (* to make the code cleaner *)
-   let spaces n = String.make n ' ' in
-   let rec string_of_syms sym_lst = 
-      match sym_lst with
-         | []   -> ""
-         | [s] -> s
-         | h::t -> h ^ " " ^ (string_of_syms t)
-   in
    let rec iter ast indent =
      let string_of_exprs e_list =
        (List.fold_left (^) ""
@@ -279,21 +309,28 @@ let string_of_ast ast =
 	 sprintf "%sPROBLEM[ %s\n%s ]" 
            (spaces indent) name (string_of_exprs body)
        | Expr_predicates( preds ) -> 
-	 sprintf "%sPREDICATES[ ]\n"
-	   ( spaces indent ) 
+	 sprintf "%sPREDICATES[ %s ]\n"
+	   ( spaces indent )
+	   (string_of_syms (List.map string_of_pred preds))
        | Expr_action ( act ) ->
-	 sprintf "%sACTION[ %s ]\n"
-	   (spaces indent) act.name 
+	 sprintf "%sACTION[ %s\n%s\n%s\n%s ]\n"
+	   (spaces indent) 
+	   act.name
+	   (string_of_params act.parameters)
+	   (string_of_precond act.precondition)
+	   (string_of_effect act.effect)
        | Expr_objects ( objs ) ->
 	 sprintf "%sOBJECTS[ %s ]\n"
 	   (spaces indent) 
-	   (string_of_syms (List.map sym_of_astatom objs))
+	   (string_of_syms (List.map string_of_atom objs))
        | Expr_init ( preds ) ->
-	 sprintf "%sINIT[ ]\n"
+	 sprintf "%sINIT[ %s ]\n"
 	   (spaces indent) 
+	   (string_of_syms (List.map string_of_pred preds))
        | Expr_goal ( preds ) ->
-	 sprintf "%sGOAL[ ]\n"
+	 sprintf "%sGOAL[ %s ]\n"
 	   (spaces indent) 
+	   (string_of_syms (List.map string_of_pred preds))
    in
    "\n" ^ iter ast 0 ^ "\n"
      
