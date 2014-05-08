@@ -3,8 +3,7 @@
 #
 
 # Default compilation target.
-default: lexer_test parser_test ast_test \
-	 strips_test pddlyte  #planner_test 
+default: pddlyte  
 
 #
 # Variables.
@@ -18,21 +17,23 @@ OEXT	  = cmo
 INTERFACES =		\
     sexpr.cmi           \
     parser.cmi          \
-    parser_utils.cmi    \
-    lexer_utils.cmi     \
+    test/parser/parser_utils.cmi \
+    test/lexer/lexer_utils.cmi	\
     ast.cmi		\
     strips.cmi		\
-   # planner.cmi		\
+    planner.cmi		\
+#    compile.cmi	\
+#    execute.cmi        \
 
 OBJS =                  \
     sexpr.$(OEXT)       \
     parser.$(OEXT)      \
     lexer.$(OEXT)       \
-    parser_utils.$(OEXT)\
-    lexer_utils.$(OEXT) \
     ast.$(OEXT)		\
     strips.$(OEXT)	\
-    #planner.cmo	\
+    planner.$(OEXT)	\
+#    compile.$(OEXT)	\
+#    execute.$(OEXT)	\
 
 #
 # Patterns.
@@ -49,40 +50,17 @@ OBJS =                  \
 
 %.cmi: %.mli
 	$(OCAMLC) -c $<
+
 %.cma: %ml
 	$(OCAMLC) -c $<
 #
 # Compilation targets.
 #
 
-lexer_test: $(INTERFACES) $(OBJS) lexer_test.cmo
-	$(OCAMLC) -o $@ $(OBJS) lexer_test.cmo
-
-parser_test: $(INTERFACES) $(OBJS) parser_test.cmo
-	$(OCAMLC) -o $@ $(OBJS) parser_test.cmo
-
-ast_test: $(INTERFACES) $(OBJS) ast_test.cmo
-	$(OCAMLC) -o $@ $(OBJS) ast_test.cmo
-
-strips_test: $(INTERFACES) $(OBJS) strips_test.cmo
-	$(OCAMLC) -o $@ $(OBJS) strips_test.cmo
-
 pddlyte: $(INTERFACES) $(OBJS) pddlyte.cmo
 	$(OCAMLC) -o $@ $(OBJS) pddlyte.cmo
 
 lexer.cmo: lexer.ml
-	$(OCAMLC) -c $<
-
-lexer_test.cmo: lexer_test.ml
-	$(OCAMLC) -c $<
-
-parser_test.cmo: parser_test.ml
-	$(OCAMLC) -c $<
-
-ast_test.cmo: ast_test.ml
-	$(OCAMLC) -c $<
-
-strips_test.cmo: strips_test.ml
 	$(OCAMLC) -c $<
 
 pddlyte.cmo: pddlyte.ml
@@ -92,20 +70,8 @@ pddlyte.cmo: pddlyte.ml
 # Tests.
 #
 
-test_lexer: lexer_test
-	./lexer_test tokens.bs
-
-test_parser: parser_test
-	./parser_test craptest
-
-test_ast: ast_test
-	./ast_test craptest
-
-test_strips: strips_test
-	./strips_test pacman.pdly
-
 test_pddlyte: pddlyte
-	./pddlyte craptest
+	./pddlyte pacman.pdly
 
 #
 # Cleanup.
@@ -113,6 +79,7 @@ test_pddlyte: pddlyte
 
 clean:
 	rm -f *.cmo *.cmi lexer.ml parser.ml	\
-	*.mll~ *.mly~ *.ml~ *.mli~ *.c~ *.out	\
+	*.mll~ *.mly~ *.ml~ *.mli~ *.c~ *.sh~	\
 	lexer_test parser_test ast_test		\
-	strips_test pddlyte master craptest~		\
+	strips_test planner_test pddlyte  	\
+	master craptest~ *.out *.log 			\
