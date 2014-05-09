@@ -1,67 +1,6 @@
 open Ast
 open Strips
-
-
-(** test functions **)
-let sprintf  = Printf.sprintf   (* to make the code cleaner *)
-let spaces n = String.make n ' '
-
-let rec string_of_syms sym_lst = 
-  (match sym_lst with
-    | []   -> ""
-    | [s] -> s
-    | h::t -> h ^ " " ^ (string_of_syms t)
-  )
-
-let string_of_atom atom =
-  ( match atom with 
-    | Atom_var a -> a
-    | Atom_gnd a -> a
-    | Atom_nil -> ""
-  )
-
-let string_of_pred pred = 
-  ( match pred with 
-    | Pred_var( name , params ) ->
-      sprintf "PRED_VAR( %s , %s )\n" 
-	name 
-	(string_of_syms(List.map string_of_atom params))
-    | Pred_gnd( name , params ) ->
-      sprintf "PRED_GND( %s , %s )\n" 
-	name 
-	(string_of_syms(List.map string_of_atom params))
-    | Pred_nil -> 
-      "PRED_NIL()\n"
-  )
-
-let string_of_params params = 
-  sprintf "PARAMETERS( %s )"
-  (string_of_syms (List.map string_of_atom params))
-
-let rec string_of_conj conj = 
-  let recurse = string_of_conj in
-  ( match conj with 
-    | Conj_and c -> 
-      sprintf "CONJ_AND(%s)"
-      (string_of_syms (List.map recurse c))
-    | Conj_pos c -> 
-      sprintf "CONJ_POS(%s)"
-	(string_of_pred c)
-    | Conj_neg c -> 
-      sprintf "CONJ_NEG(%s)"
-	(string_of_pred c)
-    | Conj_nil -> ""
-  )
-
-let string_of_precond precond =
-  sprintf "PRECONDITION( %s )"
-  (string_of_conj precond)
-
-let string_of_effect effect =
-  sprintf "EFFECT( %s )"
-  (string_of_conj effect)
-(** end test functions **)
-
+open Util
 
 (** level-one dependency **)
 
@@ -448,27 +387,11 @@ let fsearch problem =
   in dfs [s0] []
   
 let solve problem =
-  let plan = fsearch problem in
+  fsearch problem
   (* filter for actions here *)
 
+let string_of_plan plan =
   let string_of_state state = 
     (string_of_syms(List.map string_of_pred state)) in
-  let _ = Printf.printf "\nPLAN: %s" 
-    (string_of_syms (List.map string_of_state plan)) in
-  failwith "done"
-
-let planner_test infile =
-  let lexbuf = Lexing.from_channel infile in
-  let new_env = make None in
-  let rec loop env =
-    let sexpr  = Parser.parse Lexer.token lexbuf in
-    match sexpr with
-      | None ->
-	let problem = env.problem in 
-	let plan = solve problem in () 
-      | Some s ->
-        let ast = ast_of_sexpr s in
-	let _ = strips_of_ast env ast in
-        flush stdout;
-        loop env
-  in loop new_env
+  Printf.sprintf "\n%s" 
+    (string_of_syms (List.map string_of_state plan))
