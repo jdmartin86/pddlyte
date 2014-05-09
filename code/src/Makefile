@@ -20,20 +20,22 @@ INTERFACES =		\
     test/parser/parser_utils.cmi \
     test/lexer/lexer_utils.cmi	\
     ast.cmi		\
+    util.cmi		\
     strips.cmi		\
     planner.cmi		\
-#    compile.cmi	\
-#    execute.cmi        \
+    compile.cmi		\
+    execute.cmi 	\
 
 OBJS =                  \
     sexpr.$(OEXT)       \
     parser.$(OEXT)      \
     lexer.$(OEXT)       \
     ast.$(OEXT)		\
+    util.$(OEXT)	\
     strips.$(OEXT)	\
     planner.$(OEXT)	\
-#    compile.$(OEXT)	\
-#    execute.$(OEXT)	\
+    compile.$(OEXT)	\
+    execute.$(OEXT)	\
 
 #
 # Patterns.
