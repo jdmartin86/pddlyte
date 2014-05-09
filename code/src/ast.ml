@@ -1,5 +1,4 @@
 (* ast.ml *)
-
 open Sexpr
 
 (* symbols *)
@@ -39,6 +38,18 @@ type expr =
   | Expr_objects    of atom list       (* :objects body *)
   | Expr_unit                          (* () *)                          
 
+let sprintf  = Printf.sprintf
+
+let spaces n = String.make n ' '
+
+(* string from string list *)
+let rec string_of_syms sym_lst = 
+  (match sym_lst with
+    | []   -> ""
+    | [s] -> s
+    | h::t -> h ^ " " ^ (string_of_syms t)
+  )
+
 (* sexpr.atom -> string *)
 let sym_of_atom a = 
   ( match a with 
@@ -48,14 +59,6 @@ let sym_of_atom a =
       let error_msg = "improper symbol conversion" in
       failwith error_msg
   ) 
-
-(* ast.atom -> sym *)
-let sym_of_astatom a =
-( match a with 
-  | Atom_nil -> ""
-  | Atom_var va -> va
-  | Atom_gnd ga -> ga 
-) 
 
 (* sexpr.atom -> ast.atom *)
 let astatom_of_atomsym atom_sym =
@@ -233,24 +236,13 @@ let rec ast_of_sexpr sx =
   )
 
 
-(** test functions **)
-let sprintf  = Printf.sprintf   (* to make the code cleaner *)
-let spaces n = String.make n ' '
-
-let rec string_of_syms sym_lst = 
-  (match sym_lst with
-    | []   -> ""
-    | [s] -> s
-    | h::t -> h ^ " " ^ (string_of_syms t)
-  )
-
 let string_of_atom atom =
   ( match atom with 
     | Atom_var a -> a
     | Atom_gnd a -> a
-    | Atom_nil -> ""
+    | Atom_nil -> "NIL"
   )
-
+ 
 let string_of_pred pred = 
   ( match pred with 
     | Pred_var( name , params ) ->
@@ -264,10 +256,6 @@ let string_of_pred pred =
     | Pred_nil -> 
       "PRED_NIL()\n"
   )
-
-let string_of_params params = 
-  sprintf "PARAMETERS( %s )"
-  (string_of_syms (List.map string_of_atom params))
 
 let rec string_of_conj conj = 
   let recurse = string_of_conj in
@@ -284,6 +272,10 @@ let rec string_of_conj conj =
     | Conj_nil -> ""
   )
 
+let string_of_params params = 
+  sprintf "PARAMETERS( %s )"
+  (string_of_syms (List.map string_of_atom params))
+
 let string_of_precond precond =
   sprintf "PRECONDITION( %s )"
   (string_of_conj precond)
@@ -292,57 +284,46 @@ let string_of_effect effect =
   sprintf "EFFECT( %s )"
   (string_of_conj effect)
 
+let string_of_action act = 
+  act.name ^ "\n" ^
+  (string_of_params act.parameters) ^ "\n" ^ 
+  (string_of_precond act.precondition) ^ "\n" ^
+  (string_of_effect act.effect)
+
+
 let string_of_ast ast =
-   let rec iter ast indent =
-     let string_of_exprs e_list =
-       (List.fold_left (^) ""
-	  (List.map
-             (fun e -> "\n" ^ iter e (indent + 2))
-             e_list))
-     in
-     match ast with
-       | Expr_unit -> sprintf "%sUNIT"       (spaces indent) 
-       | Expr_domain ( name , body ) -> 
-	 sprintf "%sDOMAIN[ %s\n%s ]" 
-           (spaces indent) name (string_of_exprs body)
-       | Expr_problem ( name , body ) -> 
-	 sprintf "%sPROBLEM[ %s\n%s ]" 
-           (spaces indent) name (string_of_exprs body)
-       | Expr_predicates( preds ) -> 
-	 sprintf "%sPREDICATES[ %s ]\n"
-	   ( spaces indent )
-	   (string_of_syms (List.map string_of_pred preds))
-       | Expr_action ( act ) ->
-	 sprintf "%sACTION[ %s\n%s\n%s\n%s ]\n"
-	   (spaces indent) 
-	   act.name
-	   (string_of_params act.parameters)
-	   (string_of_precond act.precondition)
-	   (string_of_effect act.effect)
-       | Expr_objects ( objs ) ->
-	 sprintf "%sOBJECTS[ %s ]\n"
-	   (spaces indent) 
-	   (string_of_syms (List.map string_of_atom objs))
-       | Expr_init ( preds ) ->
-	 sprintf "%sINIT[ %s ]\n"
-	   (spaces indent) 
-	   (string_of_syms (List.map string_of_pred preds))
-       | Expr_goal ( preds ) ->
-	 sprintf "%sGOAL[ %s ]\n"
-	   (spaces indent) 
-	   (string_of_syms (List.map string_of_pred preds))
-   in
-   "\n" ^ iter ast 0 ^ "\n"
-     
-let ast_test infile =
-  let lexbuf = Lexing.from_channel infile in
-  let rec loop () =
-    let sexpr  = Parser.parse Lexer.token lexbuf in
-    match sexpr with
-      | None -> ()
-      | Some s ->
-        let expr = ast_of_sexpr s in
-        Printf.printf "%s\n" (string_of_ast expr); 
-        flush stdout;
-        loop ()
-  in loop ()
+  let rec iter ast indent =
+    let string_of_exprs e_list =
+      (List.fold_left (^) ""
+	 (List.map (fun e -> "\n" ^ iter e (indent + 2)) e_list))
+    in
+    ( match ast with
+      | Expr_unit -> sprintf "%sUNIT" (spaces indent) 
+      | Expr_domain ( name , body ) -> 
+	sprintf "%sDOMAIN[ %s\n%s ]" 
+          (spaces indent) name (string_of_exprs body)
+      | Expr_problem ( name , body ) -> 
+	sprintf "%sPROBLEM[ %s\n%s ]" 
+          (spaces indent) name (string_of_exprs body)
+      | Expr_predicates( preds ) -> 
+	sprintf "%sPREDICATES[ %s ]\n"
+	  ( spaces indent )
+	  (string_of_syms (List.map string_of_pred preds))
+      | Expr_action ( act ) ->
+	sprintf "%sACTION[ %s ]\n"
+	  (spaces indent) 
+	  (string_of_action act)
+      | Expr_objects ( objs ) ->
+	sprintf "%sOBJECTS[ %s ]\n"
+	  (spaces indent) 
+	  (string_of_syms (List.map string_of_atom objs))
+      | Expr_init ( preds ) ->
+	sprintf "%sINIT[ %s ]\n"
+	  (spaces indent) 
+	  (string_of_syms (List.map string_of_pred preds))
+      | Expr_goal ( preds ) ->
+	sprintf "%sGOAL[ %s ]\n"
+	  (spaces indent) 
+	  (string_of_syms (List.map string_of_pred preds))
+    )
+  in "\n" ^ iter ast 0 ^ "\n"

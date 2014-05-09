@@ -37,12 +37,22 @@ type expr =
   | Expr_objects    of atom list       (* :objects body *)
   | Expr_unit                          (* () *)                          
 
-(* convert s-expression into ast expression *)
-val ast_of_sexpr : Sexpr.expr -> expr
-
-(* convert an ast expression into a string. *)
-val string_of_ast : expr -> string
-
-(* test ast *)
-val ast_test : in_channel -> unit
-
+val sprintf : ('a, unit, string) format -> 'a
+val spaces : int -> string 
+val string_of_syms : string list -> string 
+val sym_of_atom : Sexpr.atom -> string 
+val astatom_of_atomsym : Sexpr.atom -> atom
+val astatom_of_sexpr : Sexpr.expr -> atom 
+val pred_of_sexpr : Sexpr.expr -> predicate
+val params_of_sexpr : Sexpr.expr list -> atom list 
+val conj_of_sexpr : Sexpr.expr -> conjunction 
+val action_of_sexpr : Sexpr.expr list -> action 
+val ast_of_sexpr : Sexpr.expr -> expr 
+val string_of_atom : atom -> sym 
+val string_of_pred : predicate -> string
+val string_of_conj : conjunction -> string
+val string_of_params : atom list -> string
+val string_of_precond : conjunction -> string
+val string_of_effect : conjunction -> string 
+val string_of_action : action -> string
+val string_of_ast : expr -> string 
