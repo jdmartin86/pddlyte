@@ -1,5 +1,6 @@
 (* compile.ml *)
-
+open Ast
+open Strips
 (* 
    - push state preds on stack until goal is satisfied
    - if all preds are on stack, pop all off and push action
@@ -13,26 +14,16 @@ type instruction =
   | Pop_pred
   | Goal
 
-let sprintf = Printf.sprintf 
-
 let string_of_instruction instruction =
 ( match instruction with 
-  | Push_action action -> sprintf "Push_action %s" action
-  | Push_pred pred -> sprintf "Push_pred %s" pred
-  | Pop_pred -> "Pop_pred"
-  | Goal -> "Goal"
+  | Push_action action -> sprintf "\nPush_action %s" action
+  | Push_pred pred -> sprintf "\nPush_pred %s" pred
+  | Pop_pred -> "\nPop_pred"
+  | Goal -> "\nGoal\n"
 )
 
-
 let print_bytecode instructions = 
-  (string_of_syms List.map string_of_instruction instructions )
-
-let rec string_of_syms sym_lst = 
-  (match sym_lst with
-    | []   -> ""
-    | [s] -> s
-    | h::t -> h ^ " " ^ (string_of_syms t)
-  )
+  (string_of_syms (List.map string_of_instruction instructions ))
 
 let string_of_atom atom =
   ( match atom with 
@@ -90,10 +81,11 @@ let pop_for num =
 (* translate plan into bytecode *)
 let translate plan problem =
   let { init = s0 ; goal = g ; ops = opset } = problem in
+  let plan_preds = List.flatten plan in
   let num_preds = List.length s0 in
   let rec recurse instructions preds =
     ( match preds with
-      | [] -> instructions
+      | [] -> List.rev instructions
       | pred::remaining_preds ->
 	( match pred with
 	  | Pred_gnd( name , params ) ->
@@ -114,4 +106,4 @@ let translate plan problem =
 	    failwith error_msg
 	)
     )
-  in recurse [] plan
+  in recurse [] plan_preds
