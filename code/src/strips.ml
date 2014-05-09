@@ -26,7 +26,8 @@ type env =
 
 (* Environments. *)
 let make parent = 
-  { parent = parent; 
+  { 
+    parent = parent; 
     bindings = Hashtbl.create 5;
     problem = { init = [] ; goal = [] ; ops = [] }
   }
@@ -71,7 +72,7 @@ let add_action env act =
 let add_all env names values = 
    let pairs = List.combine names values in
       List.iter (fun (x, y) -> add env x y) pairs
-
+(* ast.sym -> ast.sym *) 
 let atom_name a =
   let stop = (String.index a '-') in
   String.sub a 0 stop
@@ -256,71 +257,6 @@ let rec strips_of_ast env ast =
       raise (Compile_error error_msg)	  
   )
 
-(** test functions **)
-let sprintf  = Printf.sprintf   (* to make the code cleaner *)
-let spaces n = String.make n ' '
-
-let rec string_of_syms sym_lst = 
-  (match sym_lst with
-    | []   -> ""
-    | [s] -> s
-    | h::t -> h ^ " " ^ (string_of_syms t)
-  )
-
-let string_of_atom atom =
-  ( match atom with 
-    | Atom_var a -> a
-    | Atom_gnd a -> a
-    | Atom_nil -> ""
-  )
-
-let string_of_pred pred = 
-  ( match pred with 
-    | Pred_var( name , params ) ->
-      sprintf "PRED_VAR( %s , %s )\n" 
-	name 
-	(string_of_syms(List.map string_of_atom params))
-    | Pred_gnd( name , params ) ->
-      sprintf "PRED_GND( %s , %s )\n" 
-	name 
-	(string_of_syms(List.map string_of_atom params))
-    | Pred_nil -> 
-      "PRED_NIL()\n"
-  )
-
-let string_of_params params = 
-  sprintf "PARAMETERS[ %s ]"
-  (string_of_syms (List.map string_of_atom params))
-
-let rec string_of_conj conj = 
-  let recurse = string_of_conj in
-  ( match conj with 
-    | Conj_and c -> 
-      sprintf "CONJ_AND(%s)"
-      (string_of_syms (List.map recurse c))
-    | Conj_pos c -> 
-      sprintf "CONJ_POS(%s)"
-	(string_of_pred c)
-    | Conj_neg c -> 
-      sprintf "CONJ_NEG(%s)"
-	(string_of_pred c)
-    | Conj_nil -> ""
-  )
-
-let string_of_precond precond =
-  sprintf "PRECONDITION[ %s ]"
-  (string_of_conj precond)
-
-let string_of_effect effect =
-  sprintf "EFFECT[ %s ]"
-  (string_of_conj effect)
-
-let string_of_action act = 
-  act.name ^ "\n" ^
-  (string_of_params act.parameters) ^ "\n" ^ 
-  (string_of_precond act.precondition) ^ "\n" ^
-  (string_of_effect act.effect)
-
 let string_of_strips prob =
   let { init = s0 ; goal = g ; ops = acts } = prob in
   let title = 
@@ -339,18 +275,3 @@ let string_of_strips prob =
     (initial_state)
     (goal_state)
     (actions)
-
-let strips_test infile =
-  let lexbuf = Lexing.from_channel infile in
-  let new_env = make None in
-  let rec loop env =
-    let sexpr  = Parser.parse Lexer.token lexbuf in
-    match sexpr with
-      | None -> () 
-      | Some s ->
-        let ast = ast_of_sexpr s in
-	let _ = strips_of_ast env ast in
-        Printf.printf "%s\n" (string_of_strips env.problem); 
-        flush stdout;
-        loop env
-  in loop new_env

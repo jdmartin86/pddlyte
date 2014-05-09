@@ -22,5 +22,3 @@ val make : env option -> env
 
 (* convert an ast expression into a strips problem *) 
 val strips_of_ast : env -> Ast.expr -> unit
-
-val strips_test : in_channel -> unit
