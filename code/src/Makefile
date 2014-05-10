@@ -61,6 +61,7 @@ OBJS =                  \
 
 pddlyte: $(INTERFACES) $(OBJS) pddlyte.cmo
 	$(OCAMLC) -o $@ $(OBJS) pddlyte.cmo
+#	mv pddlyte /usr/bin
 
 lexer.cmo: lexer.ml
 	$(OCAMLC) -c $<
@@ -84,4 +85,4 @@ clean:
 	*.mll~ *.mly~ *.ml~ *.mli~ *.c~ *.sh~	\
 	lexer_test parser_test ast_test		\
 	strips_test planner_test pddlyte  	\
-	master craptest~ *.out *.log 			\
+	master craptest~ *.out *.log *.diff	\
