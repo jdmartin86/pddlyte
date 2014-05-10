@@ -110,28 +110,28 @@ let run_program flag infile =
 	 ( try
 	     print_ast infile
 	   with (Failure f) ->
-	     Printf.fprintf stderr "\nERROR: %s\n" f;
+	     Printf.fprintf stderr "ERROR: %s\n" f;
 	     close_in infile
 	 )
        | Plan -> 
 	 ( try
 	     print_plan infile
 	   with (Failure f) ->
-	     Printf.fprintf stderr "\nERROR: %s\n" f;
+	     Printf.fprintf stderr "ERROR: %s\n" f;
 	     close_in infile
 	 )
        | Compile -> 
 	 ( try
 	     compile_program infile
 	   with (Failure f) ->
-	     Printf.fprintf stderr "\nERROR: %s\n" f;
+	     Printf.fprintf stderr "ERROR: %s\n" f;
 	     close_in infile
 	 )
        | Execute ->  
 	 ( try
 	     execute_program infile
 	   with (Failure f) ->
-	     Printf.fprintf stderr "\nERROR: %s\n" f;
+	     Printf.fprintf stderr "ERROR: %s\n" f;
 	     close_in infile
 	 )
      )
