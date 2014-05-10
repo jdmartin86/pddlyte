@@ -26,9 +26,10 @@ let backtrack pplan =
 
 (* sorts a list of partial plans with respect to their depth *)
 let prioritize pplans =
+  let randomized_pplans = permutation pplans in
   List.sort ( fun x y -> 
     let l1 = List.length x and l2 = List.length y in
-  if l1 < l2 then 1 else if l1 = l2 then 0 else -1 ) pplans
+  if l1 < l2 then 1 else if l1 = l2 then 0 else -1 ) randomized_pplans
 
 (* 'a -> 'a list -> 'a list *)
 let remove pred state = 
@@ -103,19 +104,25 @@ let rec bind env names values =
   | ( _ , _ ) -> invalid_arg "bind"
 )
 
-(* return a subset of the partial plan, up to the member *)
-(*return all elements whose index is less than or equal to mem*)
-let pplan_to mem pplan = (* TODO: simplify *)
-  let rec loop acc pp =
+(* return the visited partial plan, if previously visted, else [] *)
+let visited state pplan = 
+  let rec try_remembering acc pp =
     ( match pp with
-      | [] -> List.rev acc
-      | s::t -> 
-	if ( s = mem ) then
-	  loop (s::acc) []
-	else 
-	  loop (s::acc) t
+      | [] -> acc
+      | s::remaining_pp -> (* s = state ; t = act::state list *)
+	if s = state then (* pplan head is a state *)
+	  try_remembering pp []
+	else
+	  ( match remaining_pp with
+	    | [] ->
+	      try_remembering [] [] (* discovered new state *)
+	    | prior_act_state::t -> 
+	      let prior_state = List.tl prior_act_state in
+	      let remaining_pplan = prior_state::t in
+	      try_remembering [] remaining_pplan
+	  )
     )
-  in loop [] pplan
+  in try_remembering [] pplan
 
 (* swap an old element for a new element in some list *)
 let swap old_pred new_pred state =
@@ -336,7 +343,7 @@ let applicable_actions state opset =
 
 (* returns all available nodes (i.e. partial plans) 
    not previously visited *)
-let successors pplan visited opset =
+let successors pplan opset =
   let state = List.hd pplan in
   (* actions: includes backward moves, but no self loops *)
   let actions = applicable_actions state opset in 
@@ -346,21 +353,25 @@ let successors pplan visited opset =
 	"no applicable actions found for state" in
       failwith error_msg
     | _ ->
-      let all_succs = List.map (successor state opset) actions in
+      let all_succs = 
+	filter_duplicates (List.map (successor state opset) actions) in
+
       let rec filter applicable_pplans succs = 
 	( match succs with 
 	  | [] -> applicable_pplans
-	  | succ_act::remaining_succs ->
-	    let act = List.hd succ_act and succ = List.tl succ_act in
-	    if succ = state then 
+	  | act_succ::remaining_succs ->
+	    let act = List.hd act_succ and succ = List.tl act_succ in
+	     if succ = state then(*self loops <-?-> complimentary effs*)
 	      filter applicable_pplans remaining_succs
-	    else
-	      if List.mem succ pplan then
-		let prior_pplan = pplan_to succ pplan in
-		filter (prior_pplan::applicable_pplans) remaining_succs
-	      else
-		let new_pplan = succ::[act]::pplan in
-		filter (new_pplan::applicable_pplans) remaining_succs 
+	    else (* back move *)
+	       let prior_pplan = visited succ pplan in 
+	       ( match prior_pplan with 
+		 | [] -> 
+		   let new_pplan = succ::[act]::pplan in
+		   filter (new_pplan::applicable_pplans) remaining_succs
+		 | p::pp ->
+		   filter (prior_pplan::applicable_pplans) remaining_succs
+	       )	
 	)
       in filter [] all_succs
   )
@@ -368,21 +379,21 @@ let successors pplan visited opset =
 (* states are now partial plans *)
 let fsearch problem = 
   let { init = s0 ; goal = g ; ops = opset } = problem in
-  let rec dfs state visited =
+  let rec dfs state explored =
     if ( goal_test state g ) then List.rev state 
     else
-      let fringe = successors state visited opset in
+      let fringe = successors state opset in
       ( match fringe with 
 	| [] -> 
 	  if search_exhausted state s0 then 
 	    let error_msg = "Problem has no solution" in
 	    failwith error_msg
 	  else
-	    dfs (backtrack state) (state::visited) 
+	    dfs (backtrack state) (state::explored)
 	| _ -> 
 	  let priority_queue = prioritize fringe in
 	  let succ = List.hd priority_queue in
-	  dfs succ (state::visited)
+	  dfs succ (state::explored)
       )
   in dfs [s0] []
   

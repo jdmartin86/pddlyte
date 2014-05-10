@@ -34,7 +34,8 @@ val dump_vals : 'a Atomhash.t -> 'a list
 val pred_name : Ast.predicate -> Ast.sym
 val pred_val : Ast.predicate -> Ast.atom list
 val bind : 'a Atomhash.t -> Atomhash.key list -> 'a list -> 'a Atomhash.t
-val pplan_to : 'a -> 'a list -> 'a list 
+val visited : Ast.predicate list -> Ast.predicate list list ->
+  Ast.predicate list list
 val swap : 'a -> 'a -> 'a list -> 'a list
 val ground_pred : Ast.atom Atomhash.t -> Ast.predicate -> Ast.predicate
 val ground_op : Ast.atom Atomhash.t -> Ast.action -> Ast.predicate
@@ -67,7 +68,7 @@ val applicable_actions :
   Ast.predicate list -> Ast.action list -> Ast.predicate list
 val successors :
   Ast.predicate list list ->
-  'a -> Ast.action list -> Ast.predicate list list list 
+  Ast.action list -> Ast.predicate list list list 
 val fsearch : Strips.strips_problem -> Ast.predicate list list 
 val solve : Strips.strips_problem -> Ast.predicate list list 
 val string_of_plan : Ast.predicate list list -> string 
