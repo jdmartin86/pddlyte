@@ -37,8 +37,6 @@ type expr =
   | Expr_objects    of atom list       (* :objects body *)
   | Expr_unit                          (* () *)                          
 
-val sprintf : ('a, unit, string) format -> 'a
-val spaces : int -> string 
 val string_of_syms : string list -> string 
 val sym_of_atom : Sexpr.atom -> string 
 val astatom_of_atomsym : Sexpr.atom -> atom

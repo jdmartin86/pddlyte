@@ -1,7 +1,7 @@
 (* ast.ml *)
 open Sexpr
+open Util
 
-(* symbols *)
 type sym = string
 
 type atom =
