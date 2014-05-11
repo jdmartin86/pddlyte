@@ -4,16 +4,17 @@ open Ast
 open Strips
 open Planner
 
-let sprintf  = Printf.sprintf   (* to make the code cleaner *)
+let sprintf  = Printf.sprintf
+
+let printf = Printf.printf
+
 let spaces n = String.make n ' '
 
 (* string from string list *)
-let rec string_of_syms sym_lst = 
-  (match sym_lst with
+let rec string_of_syms = function
     | []   -> ""
     | [s] -> s
     | h::t -> h ^ " " ^ (string_of_syms t)
-  )
 
 (* returns a random permutation of a list *)
 let rec permutation list =
@@ -31,8 +32,13 @@ let rec permutation list =
   in aux [] list (List.length list)
 
 (* deletes duplicates from a list *)
-let rec filter_duplicates list =
-  ( match list with
+let rec filter_duplicates = function
     | []->[]
     | h::t-> h::(filter_duplicates(List.filter(fun x -> x<>h )t))
-  )
+
+(* returns a list of heads from a list of lists *)
+let heads list = 
+  let rec decapitate acc = function
+    | [] -> List.rev acc
+    | h::t -> decapitate ((List.hd h)::acc) t 
+  in decapitate [] list
