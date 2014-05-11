@@ -1,5 +1,6 @@
 (* symbol table generation *)
 open Ast
+open Util
 
 type sym = string
 
