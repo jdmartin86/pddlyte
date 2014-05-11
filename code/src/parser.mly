@@ -1,9 +1,9 @@
 /* parser 
  * 
  * this translates a sequence of tokens into s-expressions.
- *
- * each call to the parser returns an s-expression. at the end of the file
- *the parser will return None; hence the program returns option.
+ * each call to the parser returns an s-expression. at the 
+ * end of the file the parser will return None; hence the 
+ * program returns option.
  */
 
 %{ open Sexpr %}
@@ -14,8 +14,6 @@
 %token <int> 	TOK_INT
 %token <string> TOK_SYM
 %token		TOK_EOF
-
-/* associativity */ 
 
 /* parse the five non-terminals of the syntax */
 %start parse 
@@ -56,4 +54,3 @@ sexpr_list:
 
 
 %%
-(* trailer *)
