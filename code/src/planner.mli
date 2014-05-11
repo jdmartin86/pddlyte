@@ -67,8 +67,8 @@ val applicable_instances :
 val applicable_actions :
   Ast.predicate list -> Ast.action list -> Ast.predicate list
 val successors :
-  Ast.predicate list list ->
-  Ast.action list -> Ast.predicate list list list 
+  Ast.predicate list list ->  Ast.action list -> 
+  Ast.predicate list list list -> Ast.predicate list list list 
 val fsearch : Strips.strips_problem -> Ast.predicate list list 
 val solve : Strips.strips_problem -> Ast.predicate list list 
 val string_of_plan : Ast.predicate list list -> string 

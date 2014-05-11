@@ -12,8 +12,19 @@ module Atomhash = Hashtbl.Make
     let hash = Hashtbl.hash
    end)
 
+
+let string_of_state state = 
+    (string_of_syms(List.map string_of_pred state))
+
+let string_of_plan plan =  
+  sprintf "\n%s" 
+    (string_of_syms (List.map string_of_state plan))
+
 (* returns the intersection of two lists *)
 let intersect l1 l2 = List.filter (fun x -> List.mem x l2) l1
+
+(* returns the disjunction of two lists *)
+let disjoin l1 l2 = List.filter (fun x -> not(List.mem x l2)) l1
 
 (* removes the last state-action combination from a partial plan *)
 let backtrack pplan = 
@@ -103,6 +114,14 @@ let rec bind env names values =
   | n::t1 , v::t2 -> Atomhash.replace env n v; bind env t1 t2 
   | ( _ , _ ) -> invalid_arg "bind"
 )
+
+(* filters states that are elements of the visited list *)
+let filter_visited succs visited = 
+  let visited_states = heads visited in (* visited = list^3 *)
+  List.filter( 
+    fun act_succ -> 
+      if ((intersect [(List.tl act_succ)] visited_states) = []) then true
+      else false) succs
 
 (* return the visited partial plan, if previously visted, else [] *)
 let visited state pplan = 
@@ -341,11 +360,9 @@ let applicable_actions state opset =
     ) 
   in next_op [] opset
 
-(* returns all available nodes (i.e. partial plans) 
-   not previously visited *)
-let successors pplan opset =
+(* returns all available nodes not previously visited *)
+let successors pplan opset explored =
   let state = List.hd pplan in
-  (* actions: includes backward moves, but no self loops *)
   let actions = applicable_actions state opset in 
   ( match actions with
     | [] -> 
@@ -354,14 +371,15 @@ let successors pplan opset =
       failwith error_msg
     | _ ->
       let all_succs = 
-	filter_duplicates (List.map (successor state opset) actions) in
-
+	filter_visited(
+	  filter_duplicates( 
+	    List.map (successor state opset) actions)) explored in
       let rec filter applicable_pplans succs = 
 	( match succs with 
 	  | [] -> applicable_pplans
 	  | act_succ::remaining_succs ->
 	    let act = List.hd act_succ and succ = List.tl act_succ in
-	     if succ = state then(*self loops <-?-> complimentary effs*)
+	     if succ = state then(* already filtered *)
 	      filter applicable_pplans remaining_succs
 	    else (* back move *)
 	       let prior_pplan = visited succ pplan in 
@@ -376,13 +394,13 @@ let successors pplan opset =
       in filter [] all_succs
   )
 
-(* states are now partial plans *)
+(* states are partial plans *)
 let fsearch problem = 
   let { init = s0 ; goal = g ; ops = opset } = problem in
   let rec dfs state explored =
     if ( goal_test state g ) then List.rev state 
     else
-      let fringe = successors state opset in
+      let fringe = successors state opset explored in
       ( match fringe with 
 	| [] -> 
 	  if search_exhausted state s0 then 
@@ -399,10 +417,4 @@ let fsearch problem =
   
 let solve problem =
   fsearch problem
-  (* filter for actions here *)
-
-let string_of_plan plan =
-  let string_of_state state = 
-    (string_of_syms(List.map string_of_pred state)) in
-  Printf.sprintf "\n%s" 
-    (string_of_syms (List.map string_of_state plan))
+  
