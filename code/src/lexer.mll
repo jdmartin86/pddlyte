@@ -8,7 +8,7 @@
 let wspc = [' ' '\t' '\n']
 let chrs = ['A'-'Z' 'a'-'z' '+' '-' '*' '/' '=' '<' '>' '!' ':' '_' '?']
 let digt = ['0'-'9']
-let symb = chrs(chrs | digt)+
+let symb = chrs(chrs | digt)*
 
 rule token = parse
   | wspc       		{ token lexbuf }
