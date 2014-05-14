@@ -17,8 +17,6 @@ OEXT	  = cmo
 INTERFACES =		\
     sexpr.cmi           \
     parser.cmi          \
-    test/parser/parser_utils.cmi \
-    test/lexer/lexer_utils.cmi	\
     ast.cmi		\
     util.cmi		\
     strips.cmi		\
@@ -61,20 +59,12 @@ OBJS =                  \
 
 pddlyte: $(INTERFACES) $(OBJS) pddlyte.cmo
 	$(OCAMLC) -o $@ $(OBJS) pddlyte.cmo
-#	mv pddlyte /usr/bin
 
 lexer.cmo: lexer.ml
 	$(OCAMLC) -c $<
 
 pddlyte.cmo: pddlyte.ml
 	$(OCAMLC) -c $<
-
-#
-# Tests.
-#
-
-test_pddlyte: pddlyte
-	./pddlyte pacman.pdly
 
 #
 # Cleanup.
