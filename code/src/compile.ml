@@ -1,6 +1,7 @@
 (* compile.ml *)
 open Ast
 open Strips
+open Util
 (* 
    - push state preds on stack until goal is satisfied
    - if all preds are on stack, pop all off and push action
