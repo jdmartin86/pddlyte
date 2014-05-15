@@ -8,14 +8,13 @@ open Strips
 *)
 
 (* compiler flags *)
-type flag = Ast | Plan | Compile | Execute
+type flag =  Path | Compile | Execute
 
 (* decode the compiler flag *)
 let decode_flag argv =
   if Array.length argv > 1 then
     List.assoc argv.(1) 
-      [ ("-a", Ast);
-	("-p", Plan);
+      [	("-p", Path);
 	("-c", Compile);
 	("-e", Execute)]
   else Execute
@@ -27,22 +26,7 @@ let decode_infile argv =
   else
     open_in argv.(1)
 
-(* compile to ast *)
-let print_ast infile =
-  let lexbuf = Lexing.from_channel infile in
-  let rec loop () =
-    let sexpr  = Parser.parse Lexer.token lexbuf in
-    ( match sexpr with
-      | None -> () 
-      | Some s ->
-        let ast = Ast.ast_of_sexpr s in
-        Printf.printf "%s\n" (Ast.string_of_ast ast); 
-        flush stdout;
-        loop ()
-    )
-  in loop ()
-
-(* compile to plan *)
+(* compile to path *)
 let print_plan infile =
   let lexbuf = Lexing.from_channel infile in
   let env = Strips.make None in
@@ -106,14 +90,7 @@ let execute_program infile =
 (* process input *)
 let run_program flag infile =
    ( match flag with
-       | Ast -> 
-	 ( try
-	     print_ast infile
-	   with (Failure f) ->
-	     Printf.fprintf stderr "ERROR: %s\n" f;
-	     close_in infile
-	 )
-       | Plan -> 
+       | Path -> 
 	 ( try
 	     print_plan infile
 	   with (Failure f) ->
@@ -138,9 +115,10 @@ let run_program flag infile =
  
 (* pddlyte top-level *)   
 let _ = 
-   if (Array.length Sys.argv > 3 || Array.length Sys.argv < 1) then
-      Printf.fprintf stderr "usage: %s [flag] [input_filename]\n" Sys.argv.(0)
+   if (Array.length Sys.argv > 3 || Array.length Sys.argv < 2) then
+      Printf.fprintf stderr "USAGE: %s [flag] [input_filename]\n" Sys.argv.(0)
    else
+     
      let flag = decode_flag Sys.argv in
      let infile = decode_infile Sys.argv in
      run_program flag infile 
