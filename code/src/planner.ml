@@ -12,10 +12,11 @@ module Atomhash = Hashtbl.Make
     let hash = Hashtbl.hash
    end)
 
-
+(* returns string from state *)
 let string_of_state state = 
-    (string_of_syms(List.map string_of_pred state))
+    (string_of_syms (List.map string_of_pred state))
 
+(* returns string from plan *)
 let string_of_plan plan =  
   sprintf "\n%s" 
     (string_of_syms (List.map string_of_state plan))
@@ -299,12 +300,11 @@ let rec unify op ( pos_preds , neg_preds ) env state  =
 		let error_msg = "no matching predicates with state" in
 		failwith error_msg
 	      | sp::remaining_sp -> 
-		let tenv = extend env np sp in (* temp sub.*)
-		if ( bindings_valid tenv env ) then
-		  (* do i sync bindings here? *)
-		  unify_npreds remaining_sp 
+		let tenv = extend env np sp in
+		if ( bindings_valid tenv env ) then 
+		  unify op ( [] , remaining_np ) tenv state 
 		else  
-		  unify op ( [] , remaining_np ) tenv state
+		  []
 	    ) in unify_npreds state_preds
       )
     | pp::remaning_pp ->
