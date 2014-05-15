@@ -172,11 +172,11 @@ let rec conj_of_sexpr sx =
 	| [ Expr_atom ( Atom_sym "not" ) ; p1 ] -> 
 	  Conj_neg ( pred_of_sexpr p1 ) (*TODO: nesting ands *) 
 	| _ -> 
-	  let error_msg = "unrecognized conjunction" in
+	  let error_msg = "invalid conjunction" in
 	  failwith error_msg
       )
     | _ -> 
-      let error_msg = "unrecognized conjunction" in
+      let error_msg = "invalid conjunction" in
       failwith error_msg
   )
 
