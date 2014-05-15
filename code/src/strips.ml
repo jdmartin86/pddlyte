@@ -161,9 +161,7 @@ let translate_grounded_param env param =
     | _ -> failwith "parameter improperly parsed"
   )
 
-(* - ensure parameter names are unique in their local scope 
-   - add types to global scope
-*)
+(* *)
 let translate_predicate_param env param = (* local parameter scope *)
   let { parent = genv ; bindings = local } = env in
   ( match genv with
@@ -183,7 +181,7 @@ let translate_predicate_param env param = (* local parameter scope *)
 	      failwith error_msg
 	    with Not_found -> (* parameter name is unique *)
 	      let _ = add env (atom_name a) (atom_type a) in
-	      Hashtbl.replace global (":type-"^(atom_type a)) ":type" (* multiple instances of type allowed *)
+	      Hashtbl.replace global (":type-"^(atom_type a)) ":type"
 	  )
 	| Atom_gnd a -> 
 	  let error_msg = 
@@ -192,7 +190,8 @@ let translate_predicate_param env param = (* local parameter scope *)
 	    ^ "' to be a variable parameter" in
 	  failwith error_msg
 	| _ -> 
-	  let error_msg = "expected  parameter declaration to be non-empty" in
+	  let error_msg = 
+	    "expected  parameter declaration to be non-empty" in
 	  failwith error_msg
       )
   )
@@ -219,7 +218,8 @@ let translate_parameter_declaration env param =
 	^ "' to be a variable parameter" in
       failwith error_msg
     | _ -> 
-      let error_msg = "expected parameter declaration to be non-empty" in
+      let error_msg = 
+	"expected parameter declaration to be non-empty" in
       failwith error_msg
   )
 
@@ -229,10 +229,6 @@ let translate_objects env params =
   List.iter translate_obj params
 
 (* lookup parameters *)
-   (* local action parameter scope 
-   - check types with global are consistent...
-   - check parameter names with local ///
-   *)
 let check_params env params = (* params = atom list *)
   let { parent = genv ; bindings = local } = env in
   ( match genv with
@@ -391,10 +387,10 @@ let translate_predicate_declaration env pred =
 	    ^ "' has already been declared in this scope" in
 	  failwith error_msg
 	with Not_found -> (* predicate name is unique *)
-	  let _ = add env (":predicate-"^name) ":predicate" in (* global dec.*)
+	  let _ = add env (":predicate-"^name) ":predicate" in
 	  let parent = Some(env) in 
 	  let param_env = make parent in 
-	  translate_predicate_params param_env params (* pass local scope *)
+	  translate_predicate_params param_env params
 	)
       | Pred_gnd( name , params ) ->
 	let error_msg = 
@@ -417,10 +413,14 @@ let translate_predicate_param_to_global env pred =
 	  | [] -> ()
 	  | Atom_var(a)::t -> 
 	    let c = sprintf "%d" count in 
-	    let _ = add env ("predicate-"^name^"-p"^c^"-"^(atom_type a)) ":typespec" in
+	    let _ = 
+	      add env 
+	      ("predicate-"^name^"-p"^c^"-"^(atom_type a)) 
+	      ":typespec" in
 	    loop (count+1) t
 	  | _ ->
-	    let error_msg = "expected variable atom before this point ..." in
+	    let error_msg = 
+	      "expected variable atom before this point ..." in
 	    failwith error_msg
 	)
       in loop 0 params
@@ -429,11 +429,6 @@ let translate_predicate_param_to_global env pred =
       failwith error_msg
   )
 
-(* - parse parameters 
-   - get types from local scope
-   - get global spec
-   - compare 
-*)
 let check_var_pred_types local_env pred =
 ( match pred with 
   | Pred_var( name , params ) ->
@@ -465,12 +460,14 @@ let check_var_pred_types local_env pred =
 	      )	 
 	  ) 
 	| _ ->
-	  let error_msg = "expected variable atom before this point ..." in
+	  let error_msg = 
+	    "expected variable atom before this point ..." in
 	  failwith error_msg
       )
     in loop 0 params
   | _ -> 
-    let error_msg = "expected variable predicate before this point ..." in
+    let error_msg = 
+      "expected variable predicate before this point ..." in
     failwith error_msg
 )
   
@@ -505,12 +502,14 @@ let check_gnd_pred_types local_env pred =
 	      )	 
 	  ) 
 	| _ ->
-	  let error_msg = "expected grounded atom before this point ..." in
+	  let error_msg = 
+	    "expected grounded atom before this point ..." in
 	  failwith error_msg
       )
     in loop 0 params
   | _ -> 
-    let error_msg = "expected grounded predicate before this point ..." in
+    let error_msg = 
+      "expected grounded predicate before this point ..." in
     failwith error_msg
 )
 
@@ -555,10 +554,10 @@ let translate_action env act =
 	    ^ "' has already been declared in this scope" in
 	  failwith error_msg
 	with Not_found -> (* parameter name is unique *)
-	  let _ = add env (":action-"^n) ":action" in (* add action name to global list *)
+	  let _ = add env (":action-"^n) ":action" in 
 	  let parent = Some(env) in 
 	  let param_env = make parent in (* make parameter table *)
-	  let _ = translate_parameter_declarations param_env params in (* add params *)
+	  let _ = translate_parameter_declarations param_env params in 
 	  let _ = translate_precondition param_env precond in
 	  let _ = check_types param_env precond in
 	  let _ = translate_effect param_env eff in
@@ -581,7 +580,7 @@ let rec strips_of_ast env ast =
     | Expr_init( init ) -> 
       let _ = translate_state env init in
       let check_problem_types = check_gnd_pred_types env in
-      let _ = List.iter check_problem_types init in (* local problem scope *)
+      let _ = List.iter check_problem_types init in 
       let p = env.parent in (* TODO: cleanup *)
       ( match p with
 	| Some( parent ) ->
@@ -593,7 +592,7 @@ let rec strips_of_ast env ast =
     | Expr_goal( goal ) -> 
       let _ = translate_state env goal in
       let check_problem_types = check_gnd_pred_types env in
-      let _ = List.iter check_problem_types goal in (* local problem scope *)
+      let _ = List.iter check_problem_types goal in 
       let p = env.parent in
       ( match p with
 	 | Some( parent ) ->
